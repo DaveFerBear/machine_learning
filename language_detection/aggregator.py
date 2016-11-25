@@ -18,7 +18,8 @@ def removeChar(letters, c):
 words = []
 english_letters = [] # for storing possible letters
 file_english = open('english.txt', 'r') # source: https://github.com/first20hours/google-10000-english
-file_output = open('output-random.csv', 'w') # truncate an existing file
+file_output = open('output.csv', 'w') # truncate an existing file
+file_output_rand = open('output-random.csv', 'w') # truncate an existing file
 
 #ENGLISH
 for line in file_english:
@@ -65,8 +66,12 @@ for x in range (0, 2500):
 	words.append([rand_word, 'random'])
 print 'Random-en Done'
 
-random.shuffle(words) # randomize list
 for w in words:
 	file_output.write(w[0] + ', ' + w[1] + '\n')
 
+random.shuffle(words) # randomize list
+for w in words:
+	file_output_rand.write(w[0] + ', ' + w[1] + '\n')
+
 file_output.close()
+file_output_rand.close()
