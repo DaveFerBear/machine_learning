@@ -1,0 +1,16 @@
+{
+	"version": "1.0",
+	"targetAttributeName": "lang",
+	"dataFormat": "CSV",
+	"dataFileContainsHeader": false,
+	"attributes": [
+		{
+			"attributeName": "word",
+			"attributeType": "TEXT"
+		},
+		{
+			"attributeName": "lang",
+			"attributeType": "CATEGORICAL"
+		}
+	]
+}
