@@ -32,6 +32,7 @@ for line in input_file:
 
 feature_names = feature_lastLetter(features, feature_names)
 
-print features[:10]
+print features[:5]
+
 feature_names += 'language'
 print feature_names
