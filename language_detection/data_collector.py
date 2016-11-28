@@ -1,4 +1,10 @@
 # encoding: utf-8
+#
+# Relevant Material: http://www.nltk.org/book/ch06.html
+# English Word List: https://github.com/first20hours/google-10000-english
+#
+# This script aggregates and labels french, english, and random words
+
 import urllib2
 import random
 
@@ -17,15 +23,17 @@ def removeChar(letters, c):
 
 words = []
 english_letters = [] # for storing possible letters
-file_english = open('english.txt', 'r') # source: https://github.com/first20hours/google-10000-english
-file_output = open('output.csv', 'w') # truncate an existing file
-file_output_rand = open('output-random.csv', 'w') # truncate an existing file
+file_english = open('english.txt', 'r') # source: 
+file_output = open('words_labelled_sorted.csv', 'w') # truncate an existing file
+file_output_rand = open('words_labelled_random.csv', 'w') # truncate an existing file
 
 #ENGLISH
 for line in file_english:
 	words.append([line[:-1], 'english'])
 	trackLetter(english_letters, line)
 file_english.close()
+random.shuffle(words) #pick 5k out of 10k list
+words = words[:5000]
 print 'English Done'
 
 #FRENCH
@@ -40,6 +48,7 @@ for line in data:
 			cur_column = 0
 		else:
 			cur_column += 1
+words.append(['le', 'french']) # this isn't formatted properly on webpage
 print 'French Done'
 
 removeChar(english_letters, '\n')
@@ -67,11 +76,11 @@ for x in range (0, 2500):
 print 'Random-en Done'
 
 for w in words:
-	file_output.write(w[0] + ', ' + w[1] + '\n')
+	file_output.write(w[0] + ',' + w[1] + '\n')
 
 random.shuffle(words) # randomize list
 for w in words:
-	file_output_rand.write(w[0] + ', ' + w[1] + '\n')
+	file_output_rand.write(w[0] + ',' + w[1] + '\n')
 
 file_output.close()
 file_output_rand.close()
