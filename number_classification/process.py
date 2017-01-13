@@ -5,12 +5,17 @@ import numpy as np
 from array import array
 
 IMAGE_BYTES = 28 * 28
-data = array('B')
-with open('data/data8', 'rb') as f:
-    data.fromfile(f, IMAGE_BYTES * 1000)
+
+data = []
+
+for i in range(0,10):
+	temp = array('B')
+	with open('data/data'+str(i), 'rb') as f:
+	    temp.fromfile(f, IMAGE_BYTES * 1000)
+	    data.append(temp)
 
 # for x in range(1,28*5):
-# 	print data[28*(x-1):28*x]
+# 	print data[4][28*(x-1):28*x]
 
 x = tf.placeholder(tf.float32, [None, IMAGE_BYTES])
 
