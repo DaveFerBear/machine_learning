@@ -40,8 +40,20 @@ def test_airhockey():
 	p2 = canvas.create_oval(sim._p2.get_corner_pos(shift=BORDER))
 	puck = canvas.create_oval(sim._puck.get_corner_pos(shift=BORDER))
 
+	def redraw():
+		canvas.after(50,redraw) # wait time (animation speed)
+		sim.update()
+
+		canvas.move(p1, sim._p1._vx, sim._p1._vy)
+		canvas.move(p2, sim._p2._vx, sim._p2._vy)
+		canvas.move(puck, sim._puck._vx, sim._puck._vy)
+
+	redraw()
 	root.mainloop()
+
 
 if __name__ == '__main__':
 	ah = AirHockeySim()
+	#test_gui()
 	test_airhockey()
+

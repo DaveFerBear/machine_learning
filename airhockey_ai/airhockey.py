@@ -10,17 +10,27 @@ class AirHockeySim(object):
 		self._rink_dim = rink_dim
 		self._net_width = net_width
 
-		#Players
-		self._p1 = Player(rink_dim[0]/2., 100, player_radius)
-		self._p2 = Player(rink_dim[0]/2., rink_dim[1]-100, player_radius)
-
+		#Players & Puck
+		self._p1 = Player(rink_dim[0]/2., 50, player_radius)
+		self._p2 = Player(rink_dim[0]/2., rink_dim[1]-50, player_radius)
 		self._puck = Player(rink_dim[0]/2., rink_dim[1]/2., puck_radius)
 
 	def print_status(self):
 		print('working')
 
+	def update(self):
+		#Check for wall collisions
+		for p in (self._p1, self._p2, self._puck):
+			if p._x <= p._r or p._x >= self._rink_dim[0]-p._r:
+				p._vx *= -1
+				print('flipped x!')
+			if p._y <= p._r or p._y >= self._rink_dim[1]-p._r:
+				p._vy *= -1
+				print('flipped y!')
+			p.update()
+
 class Player(object):
-	def __init__(self, x, y, radius, vx=0, vy=0):
+	def __init__(self, x, y, radius, vx=1, vy=1):
 		self._x = x
 		self._y = y
 		self._r = radius
