@@ -41,7 +41,7 @@ def test_airhockey():
 	puck = canvas.create_oval(sim._puck.get_corner_pos(shift=BORDER))
 
 	def redraw():
-		canvas.after(50,redraw) # wait time (animation speed)
+		canvas.after(1,redraw) # wait time (animation speed)
 		sim.update()
 
 		canvas.move(p1, sim._p1._vx, sim._p1._vy)

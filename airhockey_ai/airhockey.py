@@ -1,3 +1,4 @@
+import math
 '''
 This class contains logic for air hockey physics engine
 '''
@@ -23,11 +24,15 @@ class AirHockeySim(object):
 		for p in (self._p1, self._p2, self._puck):
 			if p._x <= p._r or p._x >= self._rink_dim[0]-p._r:
 				p._vx *= -1
-				print('flipped x!')
 			if p._y <= p._r or p._y >= self._rink_dim[1]-p._r:
 				p._vy *= -1
-				print('flipped y!')
 			p.update()
+
+		#Check for circle collisions
+		for p in (self._p1, self._p2):
+			if player_distance(p, self._puck) < p._r+self._puck._r:
+				print('Collision')
+
 
 class Player(object):
 	def __init__(self, x, y, radius, vx=1, vy=1):
@@ -47,3 +52,8 @@ class Player(object):
 		x1 = self._x + self._r + shift
 		y1 = self._y + self._r + shift
 		return x0, y0, x1, y1
+
+
+def player_distance(a, b):
+		return math.sqrt((a._x - b._x)**2 + (a._y - b._y)**2)
+
