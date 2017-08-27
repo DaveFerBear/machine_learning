@@ -1,4 +1,4 @@
-class AirHockey(object):
+class AirHockeySim(object):
 	def __init__(self):
 		pass
 
