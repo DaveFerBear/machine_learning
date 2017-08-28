@@ -5,3 +5,6 @@ Scripts to aggregate and format lists of English, French, and random words.  Thi
 
 ### Number Classification
 Image classification of MNIST dataset (handwritten numbers).  The processed dataset can be found [here](http://cis.jhu.edu/~sachin/digit/digit.html).  This classic ML problem is part of a tensorflow tutorial, however I deviated from it significantly.
+
+### Air Hockey AI
+Teaching a computer to play air hockey.
