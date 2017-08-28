@@ -1,10 +1,11 @@
 import math
+from random import random
 '''
 This class contains logic for air hockey physics engine
 '''
 class AirHockeySim(object):
 
-	def __init__(self, player_radius=12, puck_radius=8, rink_dim=(200,400), net_width=20):
+	def __init__(self, player_radius=12, puck_radius=8, rink_dim=(200,400), net_width=50):
 		#Gameplay Params
 		self._player_radius = player_radius
 		self._puck_radius = puck_radius
@@ -42,12 +43,12 @@ class AirHockeySim(object):
 
 				v1y = (-v1*math.cos(th1-phi) +2*v2*math.cos(th2-phi))*math.sin(phi) \
 					+ v1*math.sin(th1-phi)*math.sin(phi+math.pi/2.)
-
+ 
 				self._puck._vx = -v1x
 				self._puck._vy = -v1y
 
 class Player(object):
-	def __init__(self, x, y, radius, vx=1, vy=1):
+	def __init__(self, x, y, radius, vx=4*random()-2, vy=4*random()-2):
 		self._x = x
 		self._y = y
 		self._r = radius

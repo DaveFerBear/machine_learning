@@ -34,6 +34,8 @@ def test_airhockey():
 
 	# Draw Rink
 	rect = canvas.create_rectangle(BORDER, BORDER, width+BORDER, height+BORDER)
+	g1 = canvas.create_line(BORDER+width/2-sim._net_width/2, BORDER, BORDER+width/2+sim._net_width/2, BORDER, fill='red', width='5')
+	g2 = canvas.create_line(BORDER+width/2-sim._net_width/2, BORDER+height, BORDER+width/2+sim._net_width/2, BORDER+height, fill='red', width='5')
 
 	#Draw Puck and Players
 	p1 = canvas.create_oval(sim._p1.get_corner_pos(shift=BORDER))
