@@ -44,9 +44,9 @@ def test_airhockey():
 		canvas.after(1,redraw) # wait time (animation speed)
 		sim.update()
 
-		canvas.move(p1, sim._p1._vx, sim._p1._vy)
-		canvas.move(p2, sim._p2._vx, sim._p2._vy)
-		canvas.move(puck, sim._puck._vx, sim._puck._vy)
+		canvas.coords(p1, sim._p1.get_corner_pos(shift=BORDER))
+		canvas.coords(p2, sim._p2.get_corner_pos(shift=BORDER))
+		canvas.coords(puck, sim._puck.get_corner_pos(shift=BORDER))
 
 	redraw()
 	root.mainloop()

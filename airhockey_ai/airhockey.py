@@ -22,21 +22,20 @@ class AirHockeySim(object):
 	def update(self):
 		#Check for wall collisions
 		for p in (self._p1, self._p2, self._puck):
-			if p._x <= p._r or p._x >= self._rink_dim[0]-p._r:
+			if (p._x <= p._r and p._vx < 0) or (p._x >= self._rink_dim[0]-p._r and p._vx > 0):
 				p._vx *= -1
-			if p._y <= p._r or p._y >= self._rink_dim[1]-p._r:
+			if (p._y <= p._r and p._vy < 0) or (p._y >= self._rink_dim[1]-p._r and p._vy > 0):
 				p._vy *= -1
 			p.update()
 
 		#Check for circle collisions
 		for p in (self._p1, self._p2):
 			if player_distance(p, self._puck) < p._r+self._puck._r:
-				return
 				v1 = math.sqrt(self._puck._vx**2 + self._puck._vy**2)
 				v2 = math.sqrt(p._vx**2 + p._vy**2)
 				th1 = math.atan(1.*self._puck._vy/self._puck._vx)
 				th2 = math.atan(1.*p._vy/p._vx)
-				phi = th1-th2
+				phi = math.atan(1.*(p._x - self._puck._x)/(p._y - self._puck._y))
 
 				v1x = (-v1*math.cos(th1-phi) +2*v2*math.cos(th2-phi))*math.cos(phi) \
 					+ v1*math.sin(th1-phi)*math.cos(phi+math.pi/2.)
@@ -44,8 +43,8 @@ class AirHockeySim(object):
 				v1y = (-v1*math.cos(th1-phi) +2*v2*math.cos(th2-phi))*math.sin(phi) \
 					+ v1*math.sin(th1-phi)*math.sin(phi+math.pi/2.)
 
-				self._puck._vx = v1x
-				self._puck._vy = v1y
+				self._puck._vx = -v1x
+				self._puck._vy = -v1y
 
 class Player(object):
 	def __init__(self, x, y, radius, vx=1, vy=1):
