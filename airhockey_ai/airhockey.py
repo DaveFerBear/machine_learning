@@ -13,9 +13,7 @@ class AirHockeySim(object):
 		self._net_width = net_width
 
 		#Players & Puck
-		self._p1 = Player(rink_dim[0]/2., 50, player_radius)
-		self._p2 = Player(rink_dim[0]/2., rink_dim[1]-50, player_radius)
-		self._puck = Player(rink_dim[0]/2., rink_dim[1]/2., puck_radius)
+		self.reset()
 
 	def print_status(self):
 		print('working')
@@ -26,6 +24,10 @@ class AirHockeySim(object):
 			if (p._x <= p._r and p._vx < 0) or (p._x >= self._rink_dim[0]-p._r and p._vx > 0):
 				p._vx *= -1
 			if (p._y <= p._r and p._vy < 0) or (p._y >= self._rink_dim[1]-p._r and p._vy > 0):
+				#Check for goal
+				if p==self._puck and p._x > (self._rink_dim[0]-self._net_width)/2 and p._x < (self._rink_dim[0]+self._net_width)/2:
+					print('GOAALLLL')
+					self.reset()
 				p._vy *= -1
 			p.update()
 
@@ -46,9 +48,16 @@ class AirHockeySim(object):
  
 				self._puck._vx = -v1x
 				self._puck._vy = -v1y
+				p.update() # deliberately update twice to generate additional "clearance"
+
+
+	def reset(self):
+		self._p1 = Player(self._rink_dim[0]/2., 50, self._player_radius, vx=5*random(), vy=5*random())
+		self._p2 = Player(self._rink_dim[0]/2., self._rink_dim[1]-50, self._player_radius, vx=5*random(), vy=5*random())
+		self._puck = Player(self._rink_dim[0]/2., self._rink_dim[1]/2., self._puck_radius)
 
 class Player(object):
-	def __init__(self, x, y, radius, vx=4*random()-2, vy=4*random()-2):
+	def __init__(self, x, y, radius, vx=0.01, vy=0.01):
 		self._x = x
 		self._y = y
 		self._r = radius
