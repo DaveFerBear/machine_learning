@@ -31,8 +31,21 @@ class AirHockeySim(object):
 		#Check for circle collisions
 		for p in (self._p1, self._p2):
 			if player_distance(p, self._puck) < p._r+self._puck._r:
-				print('Collision')
+				return
+				v1 = math.sqrt(self._puck._vx**2 + self._puck._vy**2)
+				v2 = math.sqrt(p._vx**2 + p._vy**2)
+				th1 = math.atan(1.*self._puck._vy/self._puck._vx)
+				th2 = math.atan(1.*p._vy/p._vx)
+				phi = th1-th2
 
+				v1x = (-v1*math.cos(th1-phi) +2*v2*math.cos(th2-phi))*math.cos(phi) \
+					+ v1*math.sin(th1-phi)*math.cos(phi+math.pi/2.)
+
+				v1y = (-v1*math.cos(th1-phi) +2*v2*math.cos(th2-phi))*math.sin(phi) \
+					+ v1*math.sin(th1-phi)*math.sin(phi+math.pi/2.)
+
+				self._puck._vx = v1x
+				self._puck._vy = v1y
 
 class Player(object):
 	def __init__(self, x, y, radius, vx=1, vy=1):
