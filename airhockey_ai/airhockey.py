@@ -28,6 +28,7 @@ class AirHockeySim(object):
 				if p==self._puck and p._x > (self._rink_dim[0]-self._net_width)/2 and p._x < (self._rink_dim[0]+self._net_width)/2:
 					print('GOAALLLL')
 					self.reset()
+					return
 				p._vy *= -1
 			p.update()
 
