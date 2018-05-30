@@ -1,7 +1,7 @@
 # Data Science &amp; Machine Learning
 
 ### Fruit Classification
-Kaggle [Fuits-360 dataset](https://www.kaggle.com/moltean/fruits/version/9), containing 60 fruit classes and ~30k images. The CNN implemented has three convolutional layers, trains on a CPU in <30 minutes, and achieves >90% accuracy on this task.
+Kaggle [Fuits-360 dataset](https://www.kaggle.com/moltean/fruits/version/9), containing 60 fruit classes and ~30k images. The CNN implemented has three convolutional layers, trains on a CPU in <30 minutes, and achieves 92% accuracy on this task.
 
 ### Language Detection
 Scripts to aggregate and format lists of English, French, and random words.  This is part of a larger machine learning project to detect the language of a new string given a training set.  Amazon Machine Learning and the AWS Prediction API were used.
