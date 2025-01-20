@@ -20,8 +20,8 @@ def main():
         sim_options=gs.options.SimOptions(),
         viewer_options=gs.options.ViewerOptions(
             camera_pos=(3.5, 0.0, 2.5),
-            camera_lookat=(0.0, 0.0, 0.5),
-            camera_fov=40,
+            camera_lookat=(0.0, 1.2, 0.8),
+            camera_fov=50,
         ),
         show_viewer=args.vis,
         rigid_options=gs.options.RigidOptions(
@@ -60,8 +60,8 @@ def run_sim(scene, enable_vis):
         if i > 200:
             break
 
-    if enable_vis:
-        scene.viewer.stop()
+    # if enable_vis:
+    #     scene.viewer.stop()
 
 
 if __name__ == "__main__":
