@@ -2,7 +2,6 @@ import argparse
 import numpy as np
 import genesis as gs
 from time import time
-import threading
 
 
 def main():
@@ -49,9 +48,7 @@ def main():
     ########################## build ##########################
     scene.build()
 
-    gs.tools.run_in_another_thread(fn=run_sim, args=(scene, args.vis))
-    if args.vis:
-        scene.viewer.start()
+    run_sim(scene, args.vis)
 
 
 def run_sim(scene, enable_vis):
