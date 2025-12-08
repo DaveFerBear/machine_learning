@@ -1,6 +1,22 @@
 import argparse
 import genesis as gs
 from time import time
+import numpy as np
+
+
+def random_rotation():
+    """Generate random Euler angles for initial rotation."""
+    return (np.random.uniform(0, 360), np.random.uniform(0, 360), np.random.uniform(0, 360))
+
+
+def random_position(x_range=(-2, 2), y_range=(-2, 2), z_range=(2, 5)):
+    """Generate random position within specified ranges."""
+    return (
+        np.random.uniform(*x_range),
+        np.random.uniform(*y_range),
+        np.random.uniform(*z_range)
+    )
+
 
 obj_files = {
     "gear": {
@@ -52,12 +68,13 @@ def main():
     # Add ground plane
     plane = scene.add_entity(gs.morphs.Plane())
 
-    # Add rigid objects from obj_files, spaced apart to avoid initial intersection
+    # Add rigid objects from obj_files with random positions and rotations
     gear = scene.add_entity(
         morph=gs.morphs.Mesh(
             file=obj_files["gear"]["path"],
             scale=20.0,
-            pos=(0, 0, 2.0),
+            pos=random_position(),
+            euler=random_rotation(),
         ),
     )
 
@@ -65,7 +82,8 @@ def main():
         morph=gs.morphs.Mesh(
             file=obj_files["bottom_arm"]["path"],
             scale=20.0,
-            pos=(1.5, 0, 2.5),
+            pos=random_position(),
+            euler=random_rotation(),
         ),
     )
 
@@ -73,7 +91,8 @@ def main():
         morph=gs.morphs.Mesh(
             file=obj_files["motor_assembly"]["path"],
             scale=20.0,
-            pos=(-1.5, 0, 3.0),
+            pos=random_position(),
+            euler=random_rotation(),
         ),
     )
 
@@ -81,7 +100,8 @@ def main():
         morph=gs.morphs.Mesh(
             file=obj_files["base_plate"]["path"],
             scale=20.0,
-            pos=(0, 1.5, 3.5),
+            pos=random_position(),
+            euler=random_rotation(),
         ),
     )
 
@@ -89,7 +109,8 @@ def main():
         morph=gs.morphs.Mesh(
             file=obj_files["motor_mount"]["path"],
             scale=20.0,
-            pos=(0, -1.5, 4.0),
+            pos=random_position(),
+            euler=random_rotation(),
         ),
     )
 
