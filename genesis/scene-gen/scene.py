@@ -43,6 +43,15 @@ def random_position(x_range=(-3, 3), y_range=(-3, 3), z_range=(3, 7)):
     )
 
 
+def random_camera_config():
+    """Generate random camera configuration."""
+    resolutions = [(1024, 540), (2048, 1080), (3840, 2160)]
+    fov_options = [80, 85, 90, 95, 100]
+    fov = np.random.choice(fov_options)
+    res = resolutions[np.random.randint(0, len(resolutions))]
+    return {"fov": fov, "res": res}
+
+
 obj_files = {
     "gear": {
         "path": "parts/100T_gear - 615234/100T_gear - 615234.obj"
@@ -140,20 +149,27 @@ def main():
         ),
     )
 
-    ########################## add camera ##########################
-    camera = scene.add_camera(
-        pos=(5, 5, 3),
-        lookat=(0, 0, 1.5),
-        fov=60,
-    )
+    ########################## add cameras ##########################
+    # Create cameras with all possible configurations
+    cameras = []
+    fov_options = [80, 85, 90, 95, 100]
+
+    for fov in fov_options:
+        cam = scene.add_camera(
+            pos=(5, 5, 3),
+            lookat=(0, 0, 1.5),
+            fov=fov,
+            res=(1920, 1080),
+        )
+        cameras.append({"camera": cam, "fov": fov, "res": (1920, 1080)})
 
     ########################## build ##########################
     scene.build()
 
-    run_sim(scene, args.vis, args.capture, camera)
+    run_sim(scene, args.vis, args.capture, cameras)
 
 
-def run_sim(scene, enable_vis, capture_images, camera=None):
+def run_sim(scene, enable_vis, capture_images, cameras):
     print("\n=== Simulation Running ===")
     print("Genesis viewer shortcuts:")
     print("  [i] = hide/show shortcuts")
@@ -203,14 +219,20 @@ def run_sim(scene, enable_vis, capture_images, camera=None):
         # Auto-reset every 500 steps
         if i > 0 and i % 500 == 0:
             # Capture image at the end of the scene before reset
-            if capture_images and camera is not None:
+            if capture_images:
+                # Randomly pick a camera configuration
+                cam_config = cameras[np.random.randint(0, len(cameras))]
+                camera = cam_config["camera"]
+
                 render_result = camera.render()
                 rgb = render_result[0] if isinstance(render_result, tuple) else render_result
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"renders/scene_{reset_count:04d}_{timestamp}.png"
+                res_str = f"{cam_config['res'][0]}x{cam_config['res'][1]}"
+                fov_str = f"{cam_config['fov']}"
+                filename = f"renders/scene_{reset_count:04d}_{timestamp}_{res_str}_fov{fov_str}.png"
                 img = Image.fromarray(rgb.astype(np.uint8))
                 img.save(filename)
-                print(f"📸 Captured: {filename}")
+                print(f"📸 Captured: {filename} (res={res_str}, fov={fov_str}°)")
                 reset_count += 1
 
             print("\n🔄 Auto-reset at step 500...")
