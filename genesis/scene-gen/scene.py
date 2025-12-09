@@ -68,8 +68,35 @@ obj_files = {
     "motor_mount": {
         "path": "parts/motor_mount - Part 1/motor_mount - Part 1.obj"
     },
+    "rpi_case_bottom": {
+        "path": "parts/rpi_case_bottom/rpi_case_bottom.glb"
+    },
+    "bolt": {
+        "path": "parts/bolt/bolt.glb"
+    },
+    "raspberry_pi_cooler": {
+        "path": "parts/raspberry_pi_5_active_cooler/raspberry_pi_active_cooling.glb"
+    },
+    "fan": {
+        "path": "parts/fan/fan.glb"
+    },
+    "active_cooler": {
+        "path": "parts/active_cooler/active_cooler.glb"
+    },
+    "rpi_case_top": {
+        "path": "parts/rpi_case_top/rpi_case_top.glb"
+    },
+    "raspberry_pi": {
+        "path": "parts/raspberry_pi_5 - 00001/raspberry_pi.glb",
+    },
 }
 
+SCENE_ONE_PARTS = ["gear", "bottom_arm", "motor_assembly", "base_plate", "motor_mount"]
+SCENE_TWO_PARTS = ["rpi_case_bottom", "raspberry_pi_cooler", "fan", "active_cooler", "rpi_case_top", "raspberry_pi"]
+
+SCENE_THREE_PARTS = ["rpi_case_bottom", "raspberry_pi"]
+
+_SCENE_PARTS = SCENE_THREE_PARTS
 
 def main():
     parser = argparse.ArgumentParser()
@@ -84,7 +111,8 @@ def main():
     ########################## create a scene ##########################
     scene = gs.Scene(
         sim_options=gs.options.SimOptions(
-            dt=0.01,
+            dt=0.001,
+            substeps=20,
         ),
         viewer_options=gs.options.ViewerOptions(
             camera_pos=(5, 5, 3),
@@ -94,7 +122,7 @@ def main():
         ),
         show_viewer=args.vis,
         rigid_options=gs.options.RigidOptions(
-            dt=0.01,
+            dt=0.05,
             gravity=(0, 0, -9.8),
         ),
     )
@@ -103,51 +131,16 @@ def main():
     # Add ground plane
     plane = scene.add_entity(gs.morphs.Plane())
 
-    # Add rigid objects from obj_files with random positions and rotations
-    gear = scene.add_entity(
-        morph=gs.morphs.Mesh(
-            file=obj_files["gear"]["path"],
-            scale=20.0,
-            pos=random_position(),
-            euler=random_rotation(),
-        ),
-    )
-
-    bottom_arm = scene.add_entity(
-        morph=gs.morphs.Mesh(
-            file=obj_files["bottom_arm"]["path"],
-            scale=20.0,
-            pos=random_position(),
-            euler=random_rotation(),
-        ),
-    )
-
-    motor_assembly = scene.add_entity(
-        morph=gs.morphs.Mesh(
-            file=obj_files["motor_assembly"]["path"],
-            scale=20.0,
-            pos=random_position(),
-            euler=random_rotation(),
-        ),
-    )
-
-    base_plate = scene.add_entity(
-        morph=gs.morphs.Mesh(
-            file=obj_files["base_plate"]["path"],
-            scale=20.0,
-            pos=random_position(),
-            euler=random_rotation(),
-        ),
-    )
-
-    motor_mount = scene.add_entity(
-        morph=gs.morphs.Mesh(
-            file=obj_files["motor_mount"]["path"],
-            scale=20.0,
-            pos=random_position(),
-            euler=random_rotation(),
-        ),
-    )
+    # Add rigid objects dynamically from _SCENE_PARTS
+    for part_name in _SCENE_PARTS:
+        scene.add_entity(
+            morph=gs.morphs.Mesh(
+                file=obj_files[part_name]["path"],
+                scale=obj_files[part_name].get("scale", 20.0),
+                pos=random_position(),
+                euler=random_rotation(),
+            ),
+        )
 
     ########################## add cameras ##########################
     # Create cameras with all possible configurations
@@ -167,6 +160,7 @@ def main():
                 pos=cam_pos["pos"],
                 lookat=cam_pos["lookat"],
                 fov=fov,
+                aperture=1.4,
                 res=(1920, 1080),
             )
             cameras.append({
@@ -203,8 +197,8 @@ def run_sim(scene, enable_vis, capture_images, cameras):
         print(f"  📸 Capture mode: Images will be saved to {render_session_dir}/")
     print("==========================\n")
 
-    # Store references to entities (assuming they're indexed 1-5, after the ground plane at 0)
-    entities = list(range(1, 6))  # gear, bottom_arm, motor_assembly, base_plate, motor_mount
+    # Store references to entities (after the ground plane at 0)
+    entities = list(range(1, len(_SCENE_PARTS) + 1))
 
     t_prev = time()
     i = 0
@@ -232,7 +226,7 @@ def run_sim(scene, enable_vis, capture_images, cameras):
                 break
 
         # Auto-reset every 500 steps
-        if i > 0 and i % 500 == 0:
+        if i > 0 and i % 100 == 0:
             # Capture image at the end of the scene before reset
             if capture_images and render_session_dir is not None:
                 # Randomly pick a camera configuration
