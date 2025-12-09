@@ -169,26 +169,30 @@ def main():
     cameras = []
 
     # Define 4 camera positions at corners of 1m x 0.6m x 0.6m grid
+    # Cameras at top corners looking down 45° inward at center floor point
     camera_positions = [
-        {"pos": (0, 0, 0.6), "lookat": (0.3, 0.3, 0), "name": "corner1"},   # Corner (0,0,0.6)
-        {"pos": (1, 0, 0.6), "lookat": (0.6, 0.3, 0), "name": "corner2"},   # Corner (1,0,0.6)
-        {"pos": (0, 0.6, 0.6), "lookat": (0.3, 0.3, 0), "name": "corner3"}, # Corner (0,0.6,0.6)
-        {"pos": (1, 0.6, 0.6), "lookat": (0.6, 0.3, 0), "name": "corner4"}, # Corner (1,0.6,0.6)
+        {"pos": (0, 0, 0.6), "lookat": (0.5, 0.3, 0), "name": "corner1"},   # Corner (0,0,0.6)
+        {"pos": (1, 0, 0.6), "lookat": (0.5, 0.3, 0), "name": "corner2"},   # Corner (1,0,0.6)
+        {"pos": (0, 0.6, 0.6), "lookat": (0.5, 0.3, 0), "name": "corner3"}, # Corner (0,0.6,0.6)
+        {"pos": (1, 0.6, 0.6), "lookat": (0.5, 0.3, 0), "name": "corner4"}, # Corner (1,0.6,0.6)
     ]
+
+    CAMERA_PARAMS = {
+        "fov": 60,
+        "aperture": 3.8,
+        "res": (1920, 1080),
+    }
 
     for cam_pos in camera_positions:
         cam = scene.add_camera(
             pos=cam_pos["pos"],
             lookat=cam_pos["lookat"],
-            fov=95,
-            aperture=3.8,
-            res=(1920, 1080),
+            **CAMERA_PARAMS,
         )
         cameras.append({
             "camera": cam,
-            "fov": 95,
-            "res": (1920, 1080),
-            "pos_name": cam_pos["name"]
+            "pos_name": cam_pos["name"],
+            **CAMERA_PARAMS,
         })
 
     ########################## build ##########################
