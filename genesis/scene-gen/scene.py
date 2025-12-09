@@ -5,6 +5,7 @@ import numpy as np
 import sys
 import select
 import os
+import json
 from datetime import datetime
 from PIL import Image
 
@@ -199,10 +200,10 @@ def main():
     ########################## build ##########################
     scene.build()
 
-    run_sim(scene, args.vis, args.capture, cameras)
+    run_sim(scene, args.vis, args.capture, cameras, camera_positions, CAMERA_PARAMS)
 
 
-def run_sim(scene, enable_vis, capture_images, cameras):
+def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera_params):
     print("\n=== Simulation Running ===")
     print("Genesis viewer shortcuts:")
     print("  [i] = hide/show shortcuts")
@@ -221,6 +222,33 @@ def run_sim(scene, enable_vis, capture_images, cameras):
         render_session_dir = os.path.join("renders", session_name)
         os.makedirs(render_session_dir, exist_ok=True)
         print(f"  📸 Capture mode: Images will be saved to {render_session_dir}/")
+
+        # Generate scene_spec.json
+        scene_spec = {
+            "session_id": session_name,
+            "date_generated": datetime.now().isoformat(),
+            "parts": list(_SCENE_PARTS),
+            "lighting": {
+                "ambient_light": [0.7, 0.7, 0.7]
+            },
+            "cameras": [
+                {
+                    "id": cam_pos["name"],
+                    "position": list(cam_pos["pos"]),
+                    "lookat": list(cam_pos["lookat"]),
+                    "fov": camera_params["fov"],
+                    "aperture": camera_params["aperture"],
+                    "resolution": list(camera_params["res"])
+                }
+                for cam_pos in camera_positions
+            ]
+        }
+
+        scene_spec_path = os.path.join(render_session_dir, "scene_spec.json")
+        with open(scene_spec_path, 'w') as f:
+            json.dump(scene_spec, f, indent=2)
+        print(f"  📄 Scene spec saved to {scene_spec_path}")
+
     print("==========================\n")
 
     # Store references to entities (after the ground plane at 0)
