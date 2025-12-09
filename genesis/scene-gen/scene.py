@@ -96,7 +96,7 @@ obj_files = {
 
 SCENE_ONE_PARTS = ["gear", "bottom_arm", "motor_assembly", "base_plate", "motor_mount"]
 SCENE_TWO_PARTS = ["rpi_case_bottom", "raspberry_pi_cooler", "fan", "active_cooler", "rpi_case_top", "raspberry_pi"]
-SCENE_THREE_PARTS = ["raspberry_pi", "fan", "active_cooler", "R3_frame"]
+SCENE_THREE_PARTS = ["raspberry_pi", "fan", "active_cooler"]
 
 _SCENE_PARTS = SCENE_THREE_PARTS
 
@@ -140,6 +140,17 @@ def main():
     ########################## entities ##########################
     # Add ground plane
     plane = scene.add_entity(gs.morphs.Plane())
+
+    # Add static R3 frame at origin (fixed = not affected by physics)
+    r3_frame = scene.add_entity(
+        morph=gs.morphs.Mesh(
+            file=obj_files["R3_frame"]["path"],
+            scale=obj_files["R3_frame"].get("scale", 1.0),
+            pos=(0.5, 0, 0.3),
+            euler=(0, 0, 0),
+            fixed=True,  # Makes it static/fixed
+        ),
+    )
 
     # Add rigid objects dynamically from _SCENE_PARTS
     for part_name in _SCENE_PARTS:
@@ -207,7 +218,8 @@ def run_sim(scene, enable_vis, capture_images, cameras):
     print("==========================\n")
 
     # Store references to entities (after the ground plane at 0)
-    entities = list(range(1, len(_SCENE_PARTS) + 1))
+    # Entity indices: 0=ground, 1=R3_frame (static), 2+=dynamic parts
+    entities = list(range(2, len(_SCENE_PARTS) + 2))
 
     t_prev = time()
     i = 0
