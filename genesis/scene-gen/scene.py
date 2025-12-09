@@ -161,8 +161,8 @@ def main():
     run_sim(scene, args.vis, args.capture, cameras, camera_positions, CAMERA_PARAMS)
 
 
-def check_collisions(scene, entities):
-    """Check for rigid body collisions and print which objects are touching."""
+def get_entity_collisions(scene):
+    """Get collision pairs between entities (returns list of entity index tuples)."""
     # Use the rigid solver's collision detection method
     collision_pairs = scene.rigid_solver.detect_collision()
 
@@ -192,11 +192,18 @@ def check_collisions(scene, entities):
             # Store as sorted tuple to avoid duplicates
             entity_collisions.add(tuple(sorted([entity_a, entity_b])))
 
+    return sorted(entity_collisions)
+
+
+def check_collisions(scene, entities):
+    """Check for rigid body collisions and print which objects are touching."""
+    entity_collisions = get_entity_collisions(scene)
+
     if len(entity_collisions) > 0:
         print(f"\n🔴 Detected {len(entity_collisions)} collision(s):")
 
         # Print collision pairs
-        for entity_a, entity_b in sorted(entity_collisions):
+        for entity_a, entity_b in entity_collisions:
             name_a = get_entity_name_from_idx(entity_a)
             name_b = get_entity_name_from_idx(entity_b)
 
@@ -356,12 +363,20 @@ def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera
                         "camera_lookat": list(camera_positions[corner_idx]["lookat"])
                     })
 
+                # Get collision data
+                entity_collisions = get_entity_collisions(scene)
+                collisions_data = [
+                    [get_entity_name_from_idx(entity_a), get_entity_name_from_idx(entity_b)]
+                    for entity_a, entity_b in entity_collisions
+                ]
+
                 # Write scene data to JSONL
                 scene_data = {
                     "scene_id": reset_count,
                     "timestamp": iso_timestamp,
                     "parts": parts_data,
-                    "captures": captures_data
+                    "captures": captures_data,
+                    "collisions": collisions_data
                 }
 
                 with open(scenes_jsonl_path, 'a') as f:
