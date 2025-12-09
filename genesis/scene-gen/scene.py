@@ -152,16 +152,29 @@ def main():
     ########################## add cameras ##########################
     # Create cameras with all possible configurations
     cameras = []
-    fov_options = [80, 85, 90, 95, 100]
+    fov_options = [80, 90, 100]
 
-    for fov in fov_options:
-        cam = scene.add_camera(
-            pos=(5, 5, 3),
-            lookat=(0, 0, 1.5),
-            fov=fov,
-            res=(1920, 1080),
-        )
-        cameras.append({"camera": cam, "fov": fov, "res": (1920, 1080)})
+    # Define 3 camera positions with varying heights and angles
+    camera_positions = [
+        {"pos": (4, 4, 2.5), "lookat": (0, 0, 1.0), "name": "low"},      # Lower, less steep
+        {"pos": (5, 5, 3.5), "lookat": (0, 0, 1.5), "name": "mid"},      # Medium height
+        {"pos": (6, 6, 5.0), "lookat": (0, 0, 1.8), "name": "high"},     # Higher, steeper
+    ]
+
+    for cam_pos in camera_positions:
+        for fov in fov_options:
+            cam = scene.add_camera(
+                pos=cam_pos["pos"],
+                lookat=cam_pos["lookat"],
+                fov=fov,
+                res=(1920, 1080),
+            )
+            cameras.append({
+                "camera": cam,
+                "fov": fov,
+                "res": (1920, 1080),
+                "pos_name": cam_pos["name"]
+            })
 
     ########################## build ##########################
     scene.build()
@@ -180,16 +193,18 @@ def run_sim(scene, enable_vis, capture_images, cameras):
     print("\nInteractive controls (type in terminal):")
     print("  Type 'reset' + Enter to reset simulation with new random config")
     print("  Type 'quit' + Enter to exit")
+
+    # Create render session directory if capture mode is enabled
+    render_session_dir = None
     if capture_images:
-        print("  📸 Capture mode: Images will be saved to renders/ on each reset")
+        session_name = datetime.now().strftime("session_%Y%m%d_%H%M%S")
+        render_session_dir = os.path.join("renders", session_name)
+        os.makedirs(render_session_dir, exist_ok=True)
+        print(f"  📸 Capture mode: Images will be saved to {render_session_dir}/")
     print("==========================\n")
 
     # Store references to entities (assuming they're indexed 1-5, after the ground plane at 0)
     entities = list(range(1, 6))  # gear, bottom_arm, motor_assembly, base_plate, motor_mount
-
-    # Create renders directory if it doesn't exist
-    if capture_images:
-        os.makedirs("renders", exist_ok=True)
 
     t_prev = time()
     i = 0
@@ -219,7 +234,7 @@ def run_sim(scene, enable_vis, capture_images, cameras):
         # Auto-reset every 500 steps
         if i > 0 and i % 500 == 0:
             # Capture image at the end of the scene before reset
-            if capture_images:
+            if capture_images and render_session_dir is not None:
                 # Randomly pick a camera configuration
                 cam_config = cameras[np.random.randint(0, len(cameras))]
                 camera = cam_config["camera"]
@@ -229,10 +244,11 @@ def run_sim(scene, enable_vis, capture_images, cameras):
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 res_str = f"{cam_config['res'][0]}x{cam_config['res'][1]}"
                 fov_str = f"{cam_config['fov']}"
-                filename = f"renders/scene_{reset_count:04d}_{timestamp}_{res_str}_fov{fov_str}.png"
+                pos_name = cam_config['pos_name']
+                filename = os.path.join(render_session_dir, f"scene_{reset_count:04d}_{timestamp}_{pos_name}_{res_str}_fov{fov_str}.png")
                 img = Image.fromarray(rgb.astype(np.uint8))
                 img.save(filename)
-                print(f"📸 Captured: {filename} (res={res_str}, fov={fov_str}°)")
+                print(f"📸 Captured: {filename} (pos={pos_name}, res={res_str}, fov={fov_str}°)")
                 reset_count += 1
 
             print("\n🔄 Auto-reset at step 500...")
