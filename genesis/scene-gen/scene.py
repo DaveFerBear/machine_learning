@@ -8,49 +8,7 @@ import os
 import json
 from datetime import datetime
 from PIL import Image
-
-def random_rotation():
-    """Generate random Euler angles for initial rotation."""
-    return (np.random.uniform(0, 360), np.random.uniform(0, 360), np.random.uniform(0, 360))
-
-
-def euler_to_quat(euler):
-    """Convert Euler angles (degrees) to quaternion [w, x, y, z]."""
-    # Convert to radians
-    roll, pitch, yaw = np.radians(euler)
-
-    # Convert to quaternion
-    cy = np.cos(yaw * 0.5)
-    sy = np.sin(yaw * 0.5)
-    cp = np.cos(pitch * 0.5)
-    sp = np.sin(pitch * 0.5)
-    cr = np.cos(roll * 0.5)
-    sr = np.sin(roll * 0.5)
-
-    w = cr * cp * cy + sr * sp * sy
-    x = sr * cp * cy - cr * sp * sy
-    y = cr * sp * cy + sr * cp * sy
-    z = cr * cp * sy - sr * sp * cy
-
-    return np.array([w, x, y, z])
-
-
-def random_position(x_range=(0, 1), y_range=(0, 0.6), z_range=(0.15, 0.4)):
-    """Generate random position within specified ranges."""
-    return (
-        np.random.uniform(*x_range),
-        np.random.uniform(*y_range),
-        np.random.uniform(*z_range)
-    )
-
-
-def random_camera_config():
-    """Generate random camera configuration."""
-    resolutions = [(1024, 540), (2048, 1080), (3840, 2160)]
-    fov_options = [80, 85, 90, 95, 100]
-    fov = np.random.choice(fov_options)
-    res = resolutions[np.random.randint(0, len(resolutions))]
-    return {"fov": fov, "res": res}
+from math_utils import random_position, random_rotation, euler_to_quat, get_entity_bbox
 
 
 obj_files = {
@@ -255,6 +213,11 @@ def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera
     # Entity indices: 0=ground, 1=R3_frame (static), 2+=dynamic parts
     entities = list(range(2, len(_SCENE_PARTS) + 2))
 
+    # Path to scenes.jsonl file
+    scenes_jsonl_path = None
+    if capture_images and render_session_dir is not None:
+        scenes_jsonl_path = os.path.join(render_session_dir, "scenes.jsonl")
+
     t_prev = time()
     i = 0
     reset_count = 0
@@ -285,8 +248,32 @@ def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera
             # Capture images from all 4 camera angles
             if capture_images and render_session_dir is not None:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                iso_timestamp = datetime.now().isoformat()
+
+                # Collect part information (positions, rotations, bounding boxes)
+                parts_data = []
+                for idx, entity_idx in enumerate(entities):
+                    entity = scene.entities[entity_idx]
+                    part_name = _SCENE_PARTS[idx]
+
+                    # Get qpos: [x, y, z, qw, qx, qy, qz]
+                    qpos = entity.get_qpos()
+                    position = qpos[:3].tolist()
+                    rotation_quat = qpos[3:].tolist()
+
+                    # Get axis-aligned bounding box
+                    bbox_min, bbox_max = get_entity_bbox(entity, position)
+
+                    parts_data.append({
+                        "name": part_name,
+                        "position": position,
+                        "rotation_quat": rotation_quat,
+                        "bbox_min": bbox_min,
+                        "bbox_max": bbox_max
+                    })
 
                 # Capture from all 4 corner cameras
+                captures_data = []
                 for corner_idx in range(4):
                     cam_config = cameras[corner_idx]
                     camera = cam_config["camera"]
@@ -296,10 +283,30 @@ def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera
                     res_str = f"{cam_config['res'][0]}x{cam_config['res'][1]}"
                     fov_str = f"{cam_config['fov']}"
                     pos_name = cam_config['pos_name']
-                    filename = os.path.join(render_session_dir, f"scene_{reset_count:04d}_{timestamp}_{pos_name}_{res_str}_fov{fov_str}.png")
+                    filename = f"scene_{reset_count:04d}_{timestamp}_{pos_name}_{res_str}_fov{fov_str}.png"
+                    filepath = os.path.join(render_session_dir, filename)
                     img = Image.fromarray(rgb.astype(np.uint8))
-                    img.save(filename)
+                    img.save(filepath)
                     print(f"📸 Captured: {filename} (pos={pos_name}, res={res_str}, fov={fov_str}°)")
+
+                    captures_data.append({
+                        "camera_id": pos_name,
+                        "filename": filename,
+                        "camera_position": list(camera_positions[corner_idx]["pos"]),
+                        "camera_lookat": list(camera_positions[corner_idx]["lookat"])
+                    })
+
+                # Write scene data to JSONL
+                scene_data = {
+                    "scene_id": reset_count,
+                    "timestamp": iso_timestamp,
+                    "parts": parts_data,
+                    "captures": captures_data
+                }
+
+                with open(scenes_jsonl_path, 'a') as f:
+                    f.write(json.dumps(scene_data) + '\n')
+                print(f"📝 Scene data appended to scenes.jsonl")
 
                 reset_count += 1
 
