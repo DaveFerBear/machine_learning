@@ -34,7 +34,7 @@ def euler_to_quat(euler):
     return np.array([w, x, y, z])
 
 
-def random_position(x_range=(-3, 3), y_range=(-3, 3), z_range=(3, 7)):
+def random_position(x_range=(0, 1), y_range=(0, 0.6), z_range=(0.2, 0.8)):
     """Generate random position within specified ranges."""
     return (
         np.random.uniform(*x_range),
@@ -93,8 +93,7 @@ obj_files = {
 
 SCENE_ONE_PARTS = ["gear", "bottom_arm", "motor_assembly", "base_plate", "motor_mount"]
 SCENE_TWO_PARTS = ["rpi_case_bottom", "raspberry_pi_cooler", "fan", "active_cooler", "rpi_case_top", "raspberry_pi"]
-
-SCENE_THREE_PARTS = ["rpi_case_bottom", "raspberry_pi"]
+SCENE_THREE_PARTS = ["raspberry_pi", "fan", "active_cooler"]
 
 _SCENE_PARTS = SCENE_THREE_PARTS
 
@@ -115,10 +114,18 @@ def main():
             substeps=20,
         ),
         viewer_options=gs.options.ViewerOptions(
-            camera_pos=(5, 5, 3),
-            camera_lookat=(0, 0, 1.5),
+            camera_pos=(0.5, 0.6, 0.6),
+            camera_lookat=(0.5, 0.3, 0),
             camera_up=(0, 0, 1),
-            camera_fov=60,
+            camera_fov=75,
+        ),
+        vis_options = gs.options.VisOptions(
+            show_world_frame = True,
+            world_frame_size = 1.0, # length of the world frame in meter
+            show_link_frame  = False,
+            show_cameras     = False,
+            plane_reflection = False,
+            ambient_light    = (0.2, 0.2, 0.2),
         ),
         show_viewer=args.vis,
         rigid_options=gs.options.RigidOptions(
@@ -136,39 +143,38 @@ def main():
         scene.add_entity(
             morph=gs.morphs.Mesh(
                 file=obj_files[part_name]["path"],
-                scale=obj_files[part_name].get("scale", 20.0),
+                scale=obj_files[part_name].get("scale", 1.0),
                 pos=random_position(),
                 euler=random_rotation(),
             ),
         )
 
     ########################## add cameras ##########################
-    # Create cameras with all possible configurations
+    # Create cameras at the 4 corners of the grid looking at center
     cameras = []
-    fov_options = [80, 90, 100]
 
-    # Define 3 camera positions with varying heights and angles
+    # Define 4 camera positions at corners of 1m x 0.6m x 0.6m grid
     camera_positions = [
-        {"pos": (4, 4, 2.5), "lookat": (0, 0, 1.0), "name": "low"},      # Lower, less steep
-        {"pos": (5, 5, 3.5), "lookat": (0, 0, 1.5), "name": "mid"},      # Medium height
-        {"pos": (6, 6, 5.0), "lookat": (0, 0, 1.8), "name": "high"},     # Higher, steeper
+        {"pos": (0, 0, 0.6), "lookat": (0.3, 0.3, 0), "name": "corner1"},   # Corner (0,0,0.6)
+        {"pos": (1, 0, 0.6), "lookat": (0.6, 0.3, 0), "name": "corner2"},   # Corner (1,0,0.6)
+        {"pos": (0, 0.6, 0.6), "lookat": (0.3, 0.3, 0), "name": "corner3"}, # Corner (0,0.6,0.6)
+        {"pos": (1, 0.6, 0.6), "lookat": (0.6, 0.3, 0), "name": "corner4"}, # Corner (1,0.6,0.6)
     ]
 
     for cam_pos in camera_positions:
-        for fov in fov_options:
-            cam = scene.add_camera(
-                pos=cam_pos["pos"],
-                lookat=cam_pos["lookat"],
-                fov=fov,
-                aperture=1.4,
-                res=(1920, 1080),
-            )
-            cameras.append({
-                "camera": cam,
-                "fov": fov,
-                "res": (1920, 1080),
-                "pos_name": cam_pos["name"]
-            })
+        cam = scene.add_camera(
+            pos=cam_pos["pos"],
+            lookat=cam_pos["lookat"],
+            fov=95,
+            aperture=1.8,
+            res=(1920, 1080),
+        )
+        cameras.append({
+            "camera": cam,
+            "fov": 95,
+            "res": (1920, 1080),
+            "pos_name": cam_pos["name"]
+        })
 
     ########################## build ##########################
     scene.build()
@@ -225,24 +231,27 @@ def run_sim(scene, enable_vis, capture_images, cameras):
                 print("Exiting simulation...")
                 break
 
-        # Auto-reset every 500 steps
-        if i > 0 and i % 100 == 0:
-            # Capture image at the end of the scene before reset
+        # Auto-reset every 100 steps
+        if i > 0 and i % 40 == 0:
+            # Capture images from all 4 camera angles
             if capture_images and render_session_dir is not None:
-                # Randomly pick a camera configuration
-                cam_config = cameras[np.random.randint(0, len(cameras))]
-                camera = cam_config["camera"]
-
-                render_result = camera.render()
-                rgb = render_result[0] if isinstance(render_result, tuple) else render_result
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                res_str = f"{cam_config['res'][0]}x{cam_config['res'][1]}"
-                fov_str = f"{cam_config['fov']}"
-                pos_name = cam_config['pos_name']
-                filename = os.path.join(render_session_dir, f"scene_{reset_count:04d}_{timestamp}_{pos_name}_{res_str}_fov{fov_str}.png")
-                img = Image.fromarray(rgb.astype(np.uint8))
-                img.save(filename)
-                print(f"📸 Captured: {filename} (pos={pos_name}, res={res_str}, fov={fov_str}°)")
+
+                # Capture from all 4 corner cameras
+                for corner_idx in range(4):
+                    cam_config = cameras[corner_idx]
+                    camera = cam_config["camera"]
+
+                    render_result = camera.render()
+                    rgb = render_result[0] if isinstance(render_result, tuple) else render_result
+                    res_str = f"{cam_config['res'][0]}x{cam_config['res'][1]}"
+                    fov_str = f"{cam_config['fov']}"
+                    pos_name = cam_config['pos_name']
+                    filename = os.path.join(render_session_dir, f"scene_{reset_count:04d}_{timestamp}_{pos_name}_{res_str}_fov{fov_str}.png")
+                    img = Image.fromarray(rgb.astype(np.uint8))
+                    img.save(filename)
+                    print(f"📸 Captured: {filename} (pos={pos_name}, res={res_str}, fov={fov_str}°)")
+
                 reset_count += 1
 
             print("\n🔄 Auto-reset at step 500...")
