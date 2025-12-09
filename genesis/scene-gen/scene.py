@@ -2,14 +2,36 @@ import argparse
 import genesis as gs
 from time import time
 import numpy as np
-
+import sys
+import select
 
 def random_rotation():
     """Generate random Euler angles for initial rotation."""
     return (np.random.uniform(0, 360), np.random.uniform(0, 360), np.random.uniform(0, 360))
 
 
-def random_position(x_range=(-2, 2), y_range=(-2, 2), z_range=(2, 5)):
+def euler_to_quat(euler):
+    """Convert Euler angles (degrees) to quaternion [w, x, y, z]."""
+    # Convert to radians
+    roll, pitch, yaw = np.radians(euler)
+
+    # Convert to quaternion
+    cy = np.cos(yaw * 0.5)
+    sy = np.sin(yaw * 0.5)
+    cp = np.cos(pitch * 0.5)
+    sp = np.sin(pitch * 0.5)
+    cr = np.cos(roll * 0.5)
+    sr = np.sin(roll * 0.5)
+
+    w = cr * cp * cy + sr * sp * sy
+    x = sr * cp * cy - cr * sp * sy
+    y = cr * sp * cy + sr * cp * sy
+    z = cr * cp * sy - sr * sp * cy
+
+    return np.array([w, x, y, z])
+
+
+def random_position(x_range=(-3, 3), y_range=(-3, 3), z_range=(3, 7)):
     """Generate random position within specified ranges."""
     return (
         np.random.uniform(*x_range),
@@ -44,7 +66,7 @@ def main():
     args = parser.parse_args()
 
     ########################## init ##########################
-    gs.init(backend=gs.cpu if args.cpu else gs.gpu, logging_level="debug")
+    gs.init(backend=gs.cpu if args.cpu else gs.gpu, logging_level="warning")
 
     ########################## create a scene ##########################
     scene = gs.Scene(
@@ -121,15 +143,70 @@ def main():
 
 
 def run_sim(scene, enable_vis):
-    horizon = 2000
-    t_prev = time()
+    print("\n=== Simulation Running ===")
+    print("Genesis viewer shortcuts:")
+    print("  [i] = hide/show shortcuts")
+    print("  [r] = record video")
+    print("  [s] = save image")
+    print("  [z] = reset camera")
+    print("  [F11] = fullscreen")
+    print("\nInteractive controls (type in terminal):")
+    print("  Type 'reset' + Enter to reset simulation with new random config")
+    print("  Type 'quit' + Enter to exit")
+    print("==========================\n")
 
-    for i in range(horizon):
+    # Store references to entities (assuming they're indexed 1-5, after the ground plane at 0)
+    entities = list(range(1, 6))  # gear, bottom_arm, motor_assembly, base_plate, motor_mount
+
+    t_prev = time()
+    i = 0
+
+    while True:
+        # Check for terminal input (non-blocking)
+        if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+            line = sys.stdin.readline().strip().lower()
+            if line == 'reset':
+                print("\n🔄 Resetting simulation with new random positions and rotations...")
+                scene.reset()
+
+                # Set new random positions and rotations for each entity
+                for entity_idx in entities:
+                    new_pos = random_position()
+                    new_quat = euler_to_quat(random_rotation())
+                    # qpos is [x, y, z, qw, qx, qy, qz] - 7 values total
+                    scene.entities[entity_idx].set_qpos(np.concatenate([new_pos, new_quat]))
+
+                i = 0
+                print("✓ Reset complete with new random config!\n")
+            elif line == 'quit':
+                print("Exiting simulation...")
+                break
+
+        # Auto-reset every 500 steps
+        if i > 0 and i % 500 == 0:
+            print("\n🔄 Auto-reset at step 500...")
+            scene.reset()
+
+            # Set new random positions and rotations for each entity
+            for entity_idx in entities:
+                new_pos = random_position()
+                new_quat = euler_to_quat(random_rotation())
+                scene.entities[entity_idx].set_qpos(np.concatenate([new_pos, new_quat]))
+
+            i = 0
+            print("✓ Reset complete with new random config!\n")
+
         scene.step()
+
+        # Check if viewer is still active
+        if enable_vis and not scene.viewer.is_alive():
+            break
+
         t_now = time()
-        if i % 10 == 0:
-            print(f"Step {i}, FPS: {1 / (t_now - t_prev):.1f}")
+        if i % 300 == 0:  # Print less frequently
+            print(f"Step {i}, FPS: {1 / (t_now - t_prev):.1f} | Type 'reset' or 'quit' and press Enter")
         t_prev = t_now
+        i += 1
 
 
 if __name__ == "__main__":
