@@ -131,10 +131,10 @@ def main():
     # Define 4 camera positions at corners of 1m x 0.6m x 0.6m grid
     # Cameras at top corners looking down 45° inward at center floor point
     camera_positions = [
-        {"pos": (0, 0, 0.6), "lookat": (0.5, 0.3, 0), "name": "corner1"},   # Corner (0,0,0.6)
-        {"pos": (1, 0, 0.6), "lookat": (0.5, 0.3, 0), "name": "corner2"},   # Corner (1,0,0.6)
-        {"pos": (0, 0.6, 0.6), "lookat": (0.5, 0.3, 0), "name": "corner3"}, # Corner (0,0.6,0.6)
-        {"pos": (1, 0.6, 0.6), "lookat": (0.5, 0.3, 0), "name": "corner4"}, # Corner (1,0.6,0.6)
+        {"pos": (0, 0, 0.6), "lookat": (0.3, 0.3, 0), "name": "corner1"},   # Corner (0,0,0.6)
+        {"pos": (1, 0, 0.6), "lookat": (0.7, 0.3, 0), "name": "corner2"},   # Corner (1,0,0.6)
+        {"pos": (0, 0.6, 0.6), "lookat": (0.3, 0.3, 0), "name": "corner3"}, # Corner (0,0.6,0.6)
+        {"pos": (1, 0.6, 0.6), "lookat": (0.7, 0.3, 0), "name": "corner4"}, # Corner (1,0.6,0.6)
     ]
 
     CAMERA_PARAMS = {
