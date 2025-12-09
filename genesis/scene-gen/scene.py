@@ -161,6 +161,63 @@ def main():
     run_sim(scene, args.vis, args.capture, cameras, camera_positions, CAMERA_PARAMS)
 
 
+def check_collisions(scene, entities):
+    """Check for rigid body collisions and print which objects are touching."""
+    # Use the rigid solver's collision detection method
+    collision_pairs = scene.rigid_solver.detect_collision()
+
+    # Get mapping from geometry -> link -> entity
+    geoms_info = scene.rigid_solver.geoms_info
+    links_info = scene.rigid_solver.links_info
+
+    # Convert to numpy for easier access
+    geom_to_link = geoms_info.link_idx.to_numpy()
+    link_to_entity = links_info.entity_idx.to_numpy()
+
+    # Map collision pairs from geometry indices to entity indices
+    entity_collisions = set()
+    for geom_a, geom_b in collision_pairs:
+        # Skip ground collisions (geom 0)
+        if geom_a == 0 or geom_b == 0:
+            continue
+
+        # Map geom -> link -> entity
+        link_a = geom_to_link[geom_a]
+        link_b = geom_to_link[geom_b]
+        entity_a = link_to_entity[link_a]
+        entity_b = link_to_entity[link_b]
+
+        # Only include our entities (R3_frame=1, parts=2+)
+        if entity_a >= 1 and entity_b >= 1:
+            # Store as sorted tuple to avoid duplicates
+            entity_collisions.add(tuple(sorted([entity_a, entity_b])))
+
+    if len(entity_collisions) > 0:
+        print(f"\n🔴 Detected {len(entity_collisions)} collision(s):")
+
+        # Print collision pairs
+        for entity_a, entity_b in sorted(entity_collisions):
+            name_a = get_entity_name_from_idx(entity_a)
+            name_b = get_entity_name_from_idx(entity_b)
+
+            print(f"  • {name_a} <-> {name_b}")
+    else:
+        print("\n✓ No collisions detected (between our parts)")
+
+
+def get_entity_name_from_idx(entity_idx):
+    """Map entity index to entity name."""
+    # Entity indices: 0=ground, 1=R3_frame, 2+=parts
+    if entity_idx == 0:
+        return "ground"
+    elif entity_idx == 1:
+        return "R3_frame"
+    elif entity_idx - 2 < len(_SCENE_PARTS):
+        return _SCENE_PARTS[entity_idx - 2]
+    else:
+        return f"entity_{entity_idx}"
+
+
 def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera_params):
     print("\n=== Simulation Running ===")
     print("Genesis viewer shortcuts:")
@@ -227,6 +284,9 @@ def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera
         if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
             line = sys.stdin.readline().strip().lower()
             if line == 'reset':
+                # Check collisions before reset
+                check_collisions(scene, entities)
+
                 print("\n🔄 Resetting simulation with new random positions and rotations...")
                 scene.reset()
 
@@ -310,7 +370,10 @@ def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera
 
                 reset_count += 1
 
-            print("\n🔄 Auto-reset at step 500...")
+            # Check collisions before auto-reset
+            check_collisions(scene, entities)
+
+            print("\n🔄 Auto-reset at step 40...")
             scene.reset()
 
             # Set new random positions and rotations for each entity
