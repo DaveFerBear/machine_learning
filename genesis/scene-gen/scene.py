@@ -150,6 +150,7 @@ def main():
             euler=(0, 0, 0),
             fixed=True,  # Makes it static/fixed
         ),
+        surface=gs.surfaces.Default(color=(0.05, 0.05, 0.05, 1.0)),  # Black material
     )
 
     # Add rigid objects dynamically from _SCENE_PARTS
