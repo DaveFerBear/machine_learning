@@ -4,6 +4,9 @@ from time import time
 import numpy as np
 import sys
 import select
+import os
+from datetime import datetime
+from PIL import Image
 
 def random_rotation():
     """Generate random Euler angles for initial rotation."""
@@ -63,6 +66,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--vis", action="store_true", default=False)
     parser.add_argument("-c", "--cpu", action="store_true", default=False)
+    parser.add_argument("-p", "--capture", action="store_true", default=False, help="Capture image on reset")
     args = parser.parse_args()
 
     ########################## init ##########################
@@ -136,13 +140,20 @@ def main():
         ),
     )
 
+    ########################## add camera ##########################
+    camera = scene.add_camera(
+        pos=(5, 5, 3),
+        lookat=(0, 0, 1.5),
+        fov=60,
+    )
+
     ########################## build ##########################
     scene.build()
 
-    run_sim(scene, args.vis)
+    run_sim(scene, args.vis, args.capture, camera)
 
 
-def run_sim(scene, enable_vis):
+def run_sim(scene, enable_vis, capture_images, camera=None):
     print("\n=== Simulation Running ===")
     print("Genesis viewer shortcuts:")
     print("  [i] = hide/show shortcuts")
@@ -153,13 +164,20 @@ def run_sim(scene, enable_vis):
     print("\nInteractive controls (type in terminal):")
     print("  Type 'reset' + Enter to reset simulation with new random config")
     print("  Type 'quit' + Enter to exit")
+    if capture_images:
+        print("  📸 Capture mode: Images will be saved to renders/ on each reset")
     print("==========================\n")
 
     # Store references to entities (assuming they're indexed 1-5, after the ground plane at 0)
     entities = list(range(1, 6))  # gear, bottom_arm, motor_assembly, base_plate, motor_mount
 
+    # Create renders directory if it doesn't exist
+    if capture_images:
+        os.makedirs("renders", exist_ok=True)
+
     t_prev = time()
     i = 0
+    reset_count = 0
 
     while True:
         # Check for terminal input (non-blocking)
@@ -184,6 +202,17 @@ def run_sim(scene, enable_vis):
 
         # Auto-reset every 500 steps
         if i > 0 and i % 500 == 0:
+            # Capture image at the end of the scene before reset
+            if capture_images and camera is not None:
+                render_result = camera.render()
+                rgb = render_result[0] if isinstance(render_result, tuple) else render_result
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"renders/scene_{reset_count:04d}_{timestamp}.png"
+                img = Image.fromarray(rgb.astype(np.uint8))
+                img.save(filename)
+                print(f"📸 Captured: {filename}")
+                reset_count += 1
+
             print("\n🔄 Auto-reset at step 500...")
             scene.reset()
 
