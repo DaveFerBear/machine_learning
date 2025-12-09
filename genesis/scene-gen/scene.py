@@ -34,7 +34,7 @@ def euler_to_quat(euler):
     return np.array([w, x, y, z])
 
 
-def random_position(x_range=(0, 1), y_range=(0, 0.6), z_range=(0.2, 0.8)):
+def random_position(x_range=(0, 1), y_range=(0, 0.6), z_range=(0.15, 0.4)):
     """Generate random position within specified ranges."""
     return (
         np.random.uniform(*x_range),
@@ -181,7 +181,7 @@ def main():
             pos=cam_pos["pos"],
             lookat=cam_pos["lookat"],
             fov=95,
-            aperture=1.8,
+            aperture=3.8,
             res=(1920, 1080),
         )
         cameras.append({
