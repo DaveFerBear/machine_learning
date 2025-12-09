@@ -89,11 +89,14 @@ obj_files = {
     "raspberry_pi": {
         "path": "parts/raspberry_pi_5 - 00001/raspberry_pi.glb",
     },
+    "R3_frame": {
+        "path": "parts/R3_frame/R3_frame.glb"
+    },
 }
 
 SCENE_ONE_PARTS = ["gear", "bottom_arm", "motor_assembly", "base_plate", "motor_mount"]
 SCENE_TWO_PARTS = ["rpi_case_bottom", "raspberry_pi_cooler", "fan", "active_cooler", "rpi_case_top", "raspberry_pi"]
-SCENE_THREE_PARTS = ["raspberry_pi", "fan", "active_cooler"]
+SCENE_THREE_PARTS = ["raspberry_pi", "fan", "active_cooler", "R3_frame"]
 
 _SCENE_PARTS = SCENE_THREE_PARTS
 
