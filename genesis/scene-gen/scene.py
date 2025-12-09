@@ -128,7 +128,7 @@ def main():
             show_link_frame  = False,
             show_cameras     = False,
             plane_reflection = False,
-            ambient_light    = (0.2, 0.2, 0.2),
+            ambient_light    = (0.7, 0.7, 0.7),
         ),
         show_viewer=args.vis,
         rigid_options=gs.options.RigidOptions(
@@ -162,6 +162,7 @@ def main():
                 pos=random_position(),
                 euler=random_rotation(),
             ),
+            surface=gs.surfaces.Default(color=(0.9, 0.9, 0.9, 1.0)),  # Grey material
         )
 
     ########################## add cameras ##########################
