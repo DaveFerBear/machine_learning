@@ -28,22 +28,28 @@ obj_files = {
         "path": "parts/motor_mount - Part 1/motor_mount - Part 1.obj"
     },
     "rpi_case_bottom": {
-        "path": "parts/rpi_case_bottom/rpi_case_bottom.glb"
+        "path": "parts/rpi_case_bottom/rpi_case_bottom.glb",
+        "is_textured": True
     },
     "bolt": {
-        "path": "parts/bolt/bolt.glb"
+        "path": "parts/bolt/bolt.glb",
+        "is_textured": True
     },
     "raspberry_pi_cooler": {
-        "path": "parts/raspberry_pi_5_active_cooler/raspberry_pi_active_cooling.glb"
+        "path": "parts/raspberry_pi_5_active_cooler/raspberry_pi_active_cooling.glb",
+        "is_textured": True
     },
     "fan": {
-        "path": "parts/fan/fan.glb"
+        "path": "parts/fan/fan.glb",
+        "is_textured": True
     },
     "active_cooler": {
-        "path": "parts/active_cooler/active_cooler.glb"
+        "path": "parts/active_cooler/active_cooler.glb",
+        "is_textured": True
     },
     "rpi_case_top": {
-        "path": "parts/rpi_case_top/rpi_case_top.glb"
+        "path": "parts/rpi_case_top/rpi_case_top.glb",
+        "is_textured": True
     },
     "raspberry_pi": {
         "path": "parts/raspberry_pi_5 - 00001/raspberry_pi.glb",
