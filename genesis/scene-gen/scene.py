@@ -47,6 +47,7 @@ obj_files = {
     },
     "raspberry_pi": {
         "path": "parts/raspberry_pi_5 - 00001/raspberry_pi.glb",
+        "is_textured": True
     },
     "R3_frame": {
         "path": "parts/R3_frame/R3_frame.glb"
@@ -82,7 +83,7 @@ def main():
             camera_fov=75,
         ),
         vis_options = gs.options.VisOptions(
-            show_world_frame = True,
+            show_world_frame = False,
             world_frame_size = 1.0, # length of the world frame in meter
             show_link_frame  = False,
             show_cameras     = False,
@@ -121,7 +122,7 @@ def main():
                 pos=random_position(),
                 euler=random_rotation(),
             ),
-            surface=gs.surfaces.Default(color=(0.9, 0.9, 0.9, 1.0)),  # Grey material
+            surface=gs.surfaces.Default(color=(0.8, 0.8, 0.8, 1.0)) if not obj_files[part_name].get("is_textured", False) else None,  # Grey material
         )
 
     ########################## add cameras ##########################
