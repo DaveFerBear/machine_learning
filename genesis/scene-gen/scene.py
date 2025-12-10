@@ -232,6 +232,29 @@ def get_entity_name_from_idx(entity_idx):
         return f"entity_{entity_idx}"
 
 
+def is_scene_stable(scene, entities, velocity_threshold=0.01):
+    """Check if all entities have stopped moving (velocities below threshold)."""
+    for entity_idx in entities:
+        entity = scene.entities[entity_idx]
+        qvel = entity.get_vel()  # [vx, vy, vz, wx, wy, wz]
+
+        # Convert to numpy if it's a tensor
+        if hasattr(qvel, 'cpu'):
+            qvel = qvel.cpu().numpy()
+        else:
+            qvel = np.array(qvel)
+
+        # Check linear velocity (first 3 components)
+        linear_vel = np.linalg.norm(qvel[:3])
+        # Check angular velocity (last 3 components)
+        angular_vel = np.linalg.norm(qvel[3:])
+
+        if linear_vel > velocity_threshold or angular_vel > velocity_threshold:
+            return False
+
+    return True
+
+
 def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera_params):
     print("\n=== Simulation Running ===")
     print("Genesis viewer shortcuts:")
@@ -292,6 +315,10 @@ def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera
     t_prev = time()
     i = 0
     reset_count = 0
+    stable_frames = 0  # Count consecutive stable frames
+    STABILITY_THRESHOLD = 3  # Require 3 consecutive stable frames
+    MIN_STEPS = 20  # Minimum steps before checking stability
+    MAX_STEPS = 200  # Maximum steps before forcing reset
 
     while True:
         # Check for terminal input (non-blocking)
@@ -312,13 +339,27 @@ def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera
                     scene.entities[entity_idx].set_qpos(np.concatenate([new_pos, new_quat]))
 
                 i = 0
+                stable_frames = 0
                 print("✓ Reset complete with new random config!\n")
             elif line == 'quit':
                 print("Exiting simulation...")
                 break
 
-        # Auto-reset every 100 steps
-        if i > 0 and i % 40 == 0:
+        # Check if scene is stable and ready to capture
+        scene_is_stable = is_scene_stable(scene, entities)
+        if scene_is_stable:
+            stable_frames += 1
+        else:
+            stable_frames = 0
+
+        # Capture when: stable for required frames AND past minimum steps OR hit max steps
+        should_capture = (stable_frames >= STABILITY_THRESHOLD and i >= MIN_STEPS) or i >= MAX_STEPS
+
+        if i > 0 and should_capture:
+            if i >= MAX_STEPS:
+                print(f"⏱️  Max steps ({MAX_STEPS}) reached, capturing anyway...")
+            else:
+                print(f"✓ Scene stable at step {i}, capturing...")
             # Capture images from all 4 camera angles
             if capture_images and render_session_dir is not None:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -395,7 +436,7 @@ def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera
             # Check collisions before auto-reset
             check_collisions(scene, entities)
 
-            print("\n🔄 Auto-reset at step 40...")
+            print("\n🔄 Auto-reset after scene stabilized...")
             scene.reset()
 
             # Set new random positions and rotations for each entity
@@ -405,6 +446,7 @@ def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera
                 scene.entities[entity_idx].set_qpos(np.concatenate([new_pos, new_quat]))
 
             i = 0
+            stable_frames = 0
             print("✓ Reset complete with new random config!\n")
 
         scene.step()
@@ -415,7 +457,8 @@ def run_sim(scene, enable_vis, capture_images, cameras, camera_positions, camera
 
         t_now = time()
         if i % 300 == 0:  # Print less frequently
-            print(f"Step {i}, FPS: {1 / (t_now - t_prev):.1f} | Type 'reset' or 'quit' and press Enter")
+            status = f"stable {stable_frames}/{STABILITY_THRESHOLD}" if scene_is_stable else "moving"
+            print(f"Step {i}/{MAX_STEPS}, FPS: {1 / (t_now - t_prev):.1f}, Status: {status} | Type 'reset' or 'quit' and press Enter")
         t_prev = t_now
         i += 1
 
