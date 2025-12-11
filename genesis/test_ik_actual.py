@@ -28,11 +28,23 @@ def main():
 
     ########################## entities ##########################
     plane = scene.add_entity(gs.morphs.Plane())
+    
+    # Add static R3 frame at origin (fixed = not affected by physics)
+    r3_frame = scene.add_entity(
+        morph=gs.morphs.Mesh(
+            file="./scene-gen/parts/R3_frame/R3_frame.glb",
+            scale=1.0,
+            pos=(0.5, 0, 0.3),
+            euler=(0, 0, 0),
+            fixed=True,  # Makes it static/fixed
+        ),
+        surface=gs.surfaces.Default(color=(0.05, 0.05, 0.05, 1.0)),  # Black material
+    )
 
     arm = scene.add_entity(
         gs.morphs.MJCF(
             file="./robots/dummy-6dof.xml",
-            pos=(0.0, 0.0, 0.0),
+             pos=(0.5, 0.0, 0.6),
             euler=(0, 0, 0),
         ),
     )
