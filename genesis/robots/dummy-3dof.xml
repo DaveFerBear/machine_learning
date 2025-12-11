@@ -1,0 +1,62 @@
+<mujoco model="simple_3dof_arm">
+
+  <!-- Keep degrees so ranges are intuitive -->
+  <compiler angle="degree" inertiafromgeom="true"/>
+
+  <option gravity="0 0 -9.81" timestep="0.01"/>
+
+  <default>
+    <!-- Generic link style -->
+    <default class="link">
+      <geom type="capsule" size="0.03" rgba="0.2 0.4 0.8 1"/>
+    </default>
+
+    <!-- Visual marker style -->
+    <default class="marker">
+      <geom type="sphere" size="0.02" rgba="1 0 0 1" contype="0" conaffinity="0"/>
+    </default>
+  </default>
+
+  <worldbody>
+    <!-- Just the arm; you’ll still add a Plane from Genesis -->
+    <body name="base" pos="0 0 0">
+      <!-- Joint 1: rotate around z at the base -->
+      <body name="link1" pos="0 0 0">
+        <joint name="joint1" type="hinge" axis="0 0 1" range="-90 90"/>
+
+        <!-- Link 1: 0.3m capsule along +x -->
+        <geom class="link" name="link1_geom" fromto="0 0 0 0.3 0 0"/>
+
+        <!-- Joint 2: at the end of link1, also around z -->
+        <body name="link2" pos="0.3 0 0">
+          <joint name="joint2" type="hinge" axis="0 0 1" range="-90 90"/>
+
+          <!-- Link 2: another 0.3m capsule -->
+          <geom class="link" name="link2_geom" fromto="0 0 0 0.3 0 0"/>
+
+          <!-- Joint 3: at the end of link2, also around z -->
+          <body name="link3" pos="0.3 0 0">
+            <joint name="joint3" type="hinge" axis="0 0 1" range="-90 90"/>
+
+            <!-- Link 3: 0.2m capsule -->
+            <geom class="link" name="link3_geom" fromto="0 0 0 0.2 0 0"/>
+
+            <!-- End-effector body & visual marker -->
+            <body name="hand" pos="0.2 0 0">
+              <geom class="marker" name="ee_marker"/>
+              <site name="ee_site" pos="0 0 0" size="0.01" rgba="1 0 0 1"/>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- Simple position actuators for each joint -->
+  <actuator>
+    <position name="j1_pos" joint="joint1" kp="50"/>
+    <position name="j2_pos" joint="joint2" kp="50"/>
+    <position name="j3_pos" joint="joint3" kp="50"/>
+  </actuator>
+
+</mujoco>
