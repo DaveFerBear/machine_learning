@@ -49,7 +49,10 @@ def main():
         ),
     )
 
-    jnt_names = ["SHOULDER_A", "SHOULDER_B", "SHOULDER_C", "ELBOW_A", "ELBOW_B"]
+    jnt_names = [
+        "SHOULDER_A", "SHOULDER_B", "SHOULDER_C",
+        "ELBOW_A", "ELBOW_B", "WRIST_A",
+    ]
 
     dofs_idx = [arm.get_joint(name).dof_idx_local for name in jnt_names]
 
@@ -65,16 +68,16 @@ def main():
 
     # Gains (PD in joint space, but targets come from IK)
     arm.set_dofs_kp(
-        kp=np.array([200.0, 200.0, 150.0, 120.0, 120.0]),
+        kp=np.array([200.0, 200.0, 150.0, 120.0, 120.0, 50.0]),
         dofs_idx_local=dofs_idx,
     )
     arm.set_dofs_kv(
-        kv=np.array([20.0, 20.0, 15.0, 10.0, 10.0]),
+        kv=np.array([20.0, 20.0, 15.0, 10.0, 10.0, 5.0]),
         dofs_idx_local=dofs_idx,
     )
     arm.set_dofs_force_range(
-        lower=np.array([-50.0, -50.0, -30.0, -30.0, -20.0]),
-        upper=np.array([ 50.0,  50.0,  30.0,  30.0,  20.0]),
+        lower=np.array([-50.0, -50.0, -30.0, -30.0, -20.0, -10.0]),
+        upper=np.array([ 50.0,  50.0,  30.0,  30.0,  20.0,  10.0]),
         dofs_idx_local=dofs_idx,
     )
 
@@ -100,14 +103,17 @@ def run_sim(scene, arm, dofs_idx):
         # -----------------------------
         # 1) Define p_des(t) in task space
         # -----------------------------
-        radius = 0.4
-        center_x = 0.5
-        center_y = 0.0
-        z_const = 0.0
 
-        x = center_x + radius * 0.3 * np.cos(0.5 * t)
-        y = center_y + radius * 0.3 * np.sin(0.5 * t)
-        z = z_const
+        # Box center and half-extents
+        x_center, y_center, z_center = 0.5, 0.0, 0.3
+        x_amp = 0.2   # half of 1.0  -> x in [0.0, 1.0]
+        y_amp = 0.1   # half of 0.6  -> y in [-0.3, 0.3]
+        z_amp = 0.1   # half of 0.6  -> z in [0.0, 0.6]
+
+        # Smooth 3D Lissajous-style motion inside the box
+        x = x_center + x_amp * np.sin(0.4 * t)
+        y = y_center + y_amp * np.sin(0.7 * t + 0.8)
+        z = z_center + z_amp * np.sin(0.9 * t + 1.6)
 
         p_des = np.array([x, y, z], dtype=np.float32)
 
