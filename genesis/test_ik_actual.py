@@ -23,6 +23,14 @@ def main():
             camera_fov=30,
             max_FPS=60,
         ),
+        vis_options = gs.options.VisOptions(
+            show_world_frame = True,
+            world_frame_size = 0.2, # length of the world frame in meter
+            show_link_frame  = False,
+            show_cameras     = False,
+            # plane_reflection = False,
+            # ambient_light    = (0.7, 0.7, 0.7),
+        ),
         show_viewer=args.vis,
     )
 
@@ -105,10 +113,10 @@ def run_sim(scene, arm, dofs_idx):
         # -----------------------------
 
         # Box center and half-extents
-        x_center, y_center, z_center = 0.5, 0.0, 0.3
-        x_amp = 0.2   # half of 1.0  -> x in [0.0, 1.0]
-        y_amp = 0.1   # half of 0.6  -> y in [-0.3, 0.3]
-        z_amp = 0.1   # half of 0.6  -> z in [0.0, 0.6]
+        x_center, y_center, z_center = 0.5, 0.3, 0.3
+        x_amp = 0.3   # half of 1.0  -> x in [0.0, 1.0]
+        y_amp = 0.3   # half of 0.6  -> y in [-0.3, 0.3]
+        z_amp = 0.3   # half of 0.6  -> z in [0.0, 0.6]
 
         # Smooth 3D Lissajous-style motion inside the box
         x = x_center + x_amp * np.sin(0.4 * t)
