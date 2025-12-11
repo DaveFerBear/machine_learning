@@ -53,7 +53,7 @@ def main():
         gs.morphs.MJCF(
             file="./robots/dummy-6dof.xml",
              pos=(0.5, 0.0, 0.6),
-            euler=(0, 0, 0),
+            euler=(0, 0, -90),
         ),
     )
 
@@ -114,9 +114,9 @@ def run_sim(scene, arm, dofs_idx):
 
         # Box center and half-extents
         x_center, y_center, z_center = 0.5, 0.3, 0.3
-        x_amp = 0.3   # half of 1.0  -> x in [0.0, 1.0]
-        y_amp = 0.3   # half of 0.6  -> y in [-0.3, 0.3]
-        z_amp = 0.3   # half of 0.6  -> z in [0.0, 0.6]
+        x_amp = 0.2   # half of 1.0  -> x in [0.0, 1.0]
+        y_amp = 0.2   # half of 0.6  -> y in [-0.3, 0.3]
+        z_amp = 0.2   # half of 0.6  -> z in [0.0, 0.6]
 
         # Smooth 3D Lissajous-style motion inside the box
         x = x_center + x_amp * np.sin(0.4 * t)
