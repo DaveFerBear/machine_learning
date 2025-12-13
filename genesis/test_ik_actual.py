@@ -35,7 +35,12 @@ def main():
     )
 
     ########################## entities ##########################
-    plane = scene.add_entity(gs.morphs.Plane())
+    plane = scene.add_entity(
+        gs.morphs.Plane(),
+        surface=gs.surfaces.Default(
+            color=(0.8, 0.8, 0.8, 1.0),  # Light gray
+        ),
+    )
     
     # Add static R3 frame at origin (fixed = not affected by physics)
     r3_frame = scene.add_entity(
