@@ -122,9 +122,8 @@ def run_sim(scene, arm, dofs_idx):
     print(f"=============================\n")
 
     # Define two joint configurations
-    # Adjusted first joint by +π to flip it forward into the box
     joints_a = np.array([1.6719044, 0.23790327, -1.1429352, -0.9674109, -0.16906175, -1.2938077], dtype=np.float32)
-    joints_b = np.array([1.7719044, 0.33790327, -1.0429352, -0.8674109, -0.06906175, -1.1938077], dtype=np.float32)  # Small variation
+    joints_b = np.array([1.8719044, 0.43790327, -0.9429352, -0.7674109, 0.03093825, -1.0938077], dtype=np.float32)  # Wider variation (~0.2 rad)
 
     print(f"Target joints A: {joints_a}")
     print(f"Target joints B: {joints_b}")

@@ -10,7 +10,7 @@ def main():
     args = parser.parse_args()
 
     ########################## init ##########################
-    gs.init(backend=gs.gpu)
+    gs.init(backend=gs.gpu, logging_level="warning")
 
     ########################## create a scene ##########################
     scene = gs.Scene(
@@ -52,8 +52,8 @@ def main():
     arm = scene.add_entity(
         gs.morphs.MJCF(
             file="./robots/dummy-6dof.xml",
-             pos=(0.5, 0.0, 0.6),
-            euler=(0, 0, -90),
+             pos=(0.5, 0.0, 0.55),
+            euler=(0, 0, 90),
         ),
     )
 
@@ -89,64 +89,144 @@ def main():
         dofs_idx_local=dofs_idx,
     )
 
+    # Set initial joint position (copy values from logged output during simulation)
+    # Using joint positions from Cycle 3, Step 150 - a good middle configuration
+    initial_joints = np.array([1.4604863, 0.7191452, -0.12146536, -0.41686273, 0.15724644, -0.98767394])
+
+    if initial_joints is not None:
+        print(f"\nSetting initial joint position: {initial_joints}")
+        arm.set_dofs_position(initial_joints, dofs_idx)
+        for _ in range(50):  # Let it settle
+            scene.step()
 
     run_sim(scene, arm, dofs_idx)
 
 
 def run_sim(scene, arm, dofs_idx):
     """
-    Task-space control:
-    - Define a desired end-effector point p_des(t) in (x, y, z).
-    - Use IK to get q_des.
-    - Use joint-space PD to track q_des.
+    Motion planning between two target positions:
+    - Define two target end-effector positions
+    - Use IK to get joint positions
+    - Use motion planner to generate smooth trajectories
+    - Execute waypoints with PD control
     """
-
-    t = 0.0
-    dt = scene.sim.dt
 
     # End-effector link (defined in XML as <body name="hand">)
     end_effector = arm.get_link("hand")
 
-    for step in range(2000):
-        # -----------------------------
-        # 1) Define p_des(t) in task space
-        # -----------------------------
+    # Log initial joint configuration
+    initial_joints = arm.get_dofs_position(dofs_idx)
+    if isinstance(initial_joints, torch.Tensor):
+        initial_joints = initial_joints.detach().cpu().numpy()
+    initial_pos = end_effector.get_pos()
+    print(f"\n=== Initial Configuration ===")
+    print(f"Joint positions: {initial_joints}")
+    print(f"Hand position: {initial_pos}")
+    print(f"=============================\n")
 
-        # Box center and half-extents
-        x_center, y_center, z_center = 0.5, 0.3, 0.3
-        x_amp = 0.2   # half of 1.0  -> x in [0.0, 1.0]
-        y_amp = 0.2   # half of 0.6  -> y in [-0.3, 0.3]
-        z_amp = 0.2   # half of 0.6  -> z in [0.0, 0.6]
+    # Define array of target positions to visit in sequence
+    target_positions = np.array([
+        [0.4, 0.2, 0.3],
+        [0.4, 0.4, 0.3],
+        [0.6, 0.4, 0.35],
+        [0.6, 0.2, 0.35],
+    ], dtype=np.float32)
 
-        # Smooth 3D Lissajous-style motion inside the box
-        x = x_center + x_amp * np.sin(0.4 * t)
-        y = y_center + y_amp * np.sin(0.7 * t + 0.8)
-        z = z_center + z_amp * np.sin(0.9 * t + 1.6)
+    print("\n=== Computing IK for all targets ===")
+    target_joint_positions = []
 
-        p_des = np.array([x, y, z], dtype=np.float32)
-
-        # -----------------------------
-        # 2) Run IK: (p_des) -> q_des
-        # -----------------------------
-        q_des = arm.inverse_kinematics(
+    for i, target_pos in enumerate(target_positions):
+        print(f"Target {i}: {target_pos}")
+        qpos = arm.inverse_kinematics(
             link=end_effector,
-            pos=p_des,
-            # quat=None  # if needed
+            pos=target_pos,
         )
 
-        # If Genesis returns a torch tensor on GPU/MPS, move to CPU numpy
-        if isinstance(q_des, torch.Tensor):
-            q_des = q_des.detach().cpu().numpy()
+        # Convert to numpy if needed
+        if isinstance(qpos, torch.Tensor):
+            qpos = qpos.detach().cpu().numpy()
         else:
-            q_des = np.asarray(q_des, dtype=np.float32)
+            qpos = np.asarray(qpos, dtype=np.float32)
 
-        # -----------------------------
-        # 3) Joint-space PD tracking
-        # -----------------------------
-        arm.set_dofs_position(q_des, dofs_idx)
+        target_joint_positions.append(qpos)
 
+    print("IK computation complete\n")
+
+    # Plan all paths between consecutive targets
+    print("\n=== Planning all paths ===")
+    planned_paths = []
+
+    # Plan from initial position to first target
+    print(f"Planning path: initial -> target 0")
+    path = arm.plan_path(
+        qpos_goal=target_joint_positions[0],
+        num_waypoints=100,
+    )
+    planned_paths.append(path)
+
+    # Plan paths between consecutive targets
+    for i in range(len(target_joint_positions)):
+        next_idx = (i + 1) % len(target_joint_positions)
+        print(f"Planning path: target {i} -> target {next_idx}")
+
+        # Set arm to current target position to plan from there
+        arm.set_dofs_position(target_joint_positions[i], dofs_idx)
         scene.step()
-        t += dt
+
+        path = arm.plan_path(
+            qpos_goal=target_joint_positions[next_idx],
+            num_waypoints=100,
+        )
+        planned_paths.append(path)
+
+    print("Path planning complete\n")
+
+    # Reset to initial position
+    arm.set_dofs_position(initial_joints, dofs_idx)
+    for _ in range(50):
+        scene.step()
+
+    # Execute motion using pre-planned paths
+    num_cycles = 10
+    for cycle in range(num_cycles):
+        print(f"\n{'='*50}")
+        print(f"Cycle {cycle + 1}/{num_cycles}")
+        print(f"{'='*50}")
+
+        # First cycle uses path from initial to target 0, others start from target 3->0
+        if cycle == 0:
+            path_indices = range(len(planned_paths))
+        else:
+            path_indices = range(1, len(planned_paths))
+
+        for path_idx in path_indices:
+            # Destination target index (wraps around for last path which goes back to target 0)
+            target_idx = path_idx % len(target_positions)
+            print(f"\nMoving to target {target_idx}: {target_positions[target_idx]}")
+
+            path = planned_paths[path_idx]
+
+            # Execute path
+            for i, waypoint in enumerate(path):
+                arm.control_dofs_position(waypoint[:len(dofs_idx)], dofs_idx)
+                scene.step()
+
+                # Print progress periodically
+                if i % 25 == 0:
+                    actual_pos = end_effector.get_pos()
+                    if isinstance(actual_pos, torch.Tensor):
+                        actual_pos = actual_pos.detach().cpu().numpy()
+                    print(f"  Step {i:3d}: Hand = {actual_pos}")
+
+            # Settling time
+            for i in range(50):
+                scene.step()
+
+            # Print final position
+            actual_pos = end_effector.get_pos()
+            if isinstance(actual_pos, torch.Tensor):
+                actual_pos = actual_pos.detach().cpu().numpy()
+            print(f"  Reached: Hand = {actual_pos}")
 
 
 if __name__ == "__main__":

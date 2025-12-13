@@ -19,7 +19,7 @@
 
       <!-- Joint: SHOULDER_A -->
       <body name="link1" pos="0 0 0">
-        <joint name="SHOULDER_A" type="hinge" axis="1 0 0" range="-180 180"/>
+        <joint name="SHOULDER_A" type="hinge" axis="1 0 0" range="-90 90"/>
 
         <!-- SHOULDER_A -> SHOULDER_B
              mm: [45.987, 0.001, -1.243]  => m: [0.045987, 0.000001, -0.001243] -->
