@@ -79,6 +79,22 @@ def main():
     ########################## build ##########################
     scene.build()
 
+    # Add camera and attach to end effector (must be after scene.build())
+    end_effector = arm.get_link("hand")
+    ee_camera = scene.add_camera(
+        res=(640, 480),
+        pos=(0, 0, 0),
+        lookat=(0, 0.1, 0),
+        fov=60,
+    )
+
+    # Create offset transformation matrix (identity = no offset from link)
+    offset_T = np.eye(4, dtype=np.float32)
+
+    # Attach camera to end effector
+    ee_camera.attach(end_effector, offset_T)
+    print(f"Added camera to end effector: {ee_camera}")
+
     # Gains (PD in joint space, but targets come from IK)
     arm.set_dofs_kp(
         kp=np.array([200.0, 200.0, 150.0, 120.0, 120.0, 50.0]),
