@@ -85,14 +85,34 @@ def setup_scene(show_viewer: bool = False):
         ),
     )
 
-    # Add camera for streaming (positioned to view workspace)
+    # Add cameras for streaming (positioned to view workspace)
     # Must be added BEFORE scene.build()
+    # Each camera points 45° down and 45° inward toward the box
+
     cameras = {
-        'overview-camera': {
+        'corner-1': {
             'res': (1280, 720),
-            'pos': (0, -2.5, 1.5),
-            'lookat': (0.5, 0.0, 0.5),
-            'fov': 50,
+            'pos': (0, 0, 0.6),
+            'lookat': (0.3, 0.3, 0),
+            'fov': 60,
+        },
+        'corner-2': {
+            'res': (1280, 720),
+            'pos': (1, 0, 0.6),
+            'lookat': (0.7, 0.3, 0),
+            'fov': 60,
+        },
+        'corner-3': {
+            'res': (1280, 720),
+            'pos': (0, 0.6, 0.6),
+            'lookat': (0.3, 0.3, 0),
+            'fov': 60,
+        },
+        'corner-4': {
+            'res': (1280, 720),
+            'pos': (1, 0.6, 0.6),
+            'lookat': (0.7, 0.3, 0),
+            'fov': 60,
         },
     }
     stream_cameras = []
