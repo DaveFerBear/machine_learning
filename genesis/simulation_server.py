@@ -3,6 +3,7 @@ import threading
 import cv2
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -23,6 +24,15 @@ controller = None
 
 # Create FastAPI app
 app = FastAPI(title="Genesis Simulation Server")
+
+# Add CORS middleware to allow requests from Next.js frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Next.js dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/move")
