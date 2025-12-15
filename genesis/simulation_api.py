@@ -10,7 +10,7 @@ class SimulationController:
     Controller for Genesis simulation with real-time execution and command queuing.
     """
 
-    def __init__(self, scene, arm, dofs_idx, end_effector, camera=None):
+    def __init__(self, scene, arm, dofs_idx, end_effector, cameras=None):
         """
         Initialize the simulation controller.
 
@@ -19,13 +19,13 @@ class SimulationController:
             arm: Robot arm entity
             dofs_idx: List of DOF indices for the arm joints
             end_effector: End effector link object
-            camera: Optional camera for video streaming
+            cameras: Optional list of (camera_id, camera) tuples for video streaming
         """
         self.scene = scene
         self.arm = arm
         self.dofs_idx = dofs_idx
         self.end_effector = end_effector
-        self.camera = camera
+        self.cameras = cameras or []
 
         # Command queue and synchronization
         self.command_queue = deque()
@@ -37,8 +37,8 @@ class SimulationController:
         self.current_path = None
         self.current_waypoint_idx = 0
 
-        # Frame caching for video streaming
-        self.latest_frame = None
+        # Frame caching for video streaming (dict of camera_id -> frame)
+        self.latest_frames = {}
         self.frame_lock = threading.Lock()
         self.render_interval = 3  # Render every 3 steps (~30 FPS at 100Hz sim)
         self.step_count = 0
@@ -103,7 +103,7 @@ class SimulationController:
             self.step_count += 1
 
             # Render frame periodically for video streaming
-            if self.camera is not None and self.step_count % self.render_interval == 0:
+            if self.cameras and self.step_count % self.render_interval == 0:
                 self._render_frame()
 
             # If currently executing a path, continue executing waypoints
@@ -219,29 +219,37 @@ class SimulationController:
         }
 
     def _render_frame(self):
-        """Render a frame from the camera and cache it."""
-        if self.camera is None:
+        """Render frames from all cameras and cache them."""
+        if not self.cameras:
             return
 
-        render_result = self.camera.render()
-        rgb = render_result[0] if isinstance(render_result, tuple) else render_result
+        for camera_id, camera in self.cameras:
+            render_result = camera.render()
+            rgb = render_result[0] if isinstance(render_result, tuple) else render_result
 
-        # Convert to numpy if needed
-        if isinstance(rgb, torch.Tensor):
-            rgb = rgb.detach().cpu().numpy()
+            # Convert to numpy if needed
+            if isinstance(rgb, torch.Tensor):
+                rgb = rgb.detach().cpu().numpy()
 
-        # Cache the frame (thread-safe)
-        with self.frame_lock:
-            self.latest_frame = rgb
+            # Cache the frame (thread-safe)
+            with self.frame_lock:
+                self.latest_frames[camera_id] = rgb
 
-    def get_latest_frame(self):
+    def get_latest_frame(self, camera_id=None):
         """
-        Get the most recently rendered frame.
+        Get the most recently rendered frame from a specific camera.
+
+        Args:
+            camera_id: ID of the camera to get frame from. If None, returns first camera's frame.
 
         Returns:
             numpy.ndarray: RGB frame (height, width, 3) or None if no frame available
         """
         with self.frame_lock:
-            if self.latest_frame is not None:
-                return self.latest_frame.copy()
+            if camera_id is None and self.latest_frames:
+                # Return first available camera frame
+                camera_id = list(self.latest_frames.keys())[0]
+
+            if camera_id in self.latest_frames:
+                return self.latest_frames[camera_id].copy()
             return None

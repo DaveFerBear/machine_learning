@@ -33,6 +33,30 @@ h1 {
   gap: 2rem;
 }
 
+.streams-section {
+  width: 100%;
+}
+
+.camera-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.camera-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.camera-label {
+  font-size: 0.875rem;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  padding-left: 0.25rem;
+}
+
 .stream-container {
   background: #1a1a1a;
   border-radius: 8px;
@@ -147,6 +171,10 @@ h1 {
 
 @media (max-width: 1024px) {
   .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .camera-grid {
     grid-template-columns: 1fr;
   }
 }

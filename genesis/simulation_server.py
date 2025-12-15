@@ -61,16 +61,55 @@ async def get_status():
     return controller.get_status()
 
 
-@app.get("/stream")
-async def video_stream():
+@app.get("/cameras")
+async def get_cameras():
     """
-    MJPEG video stream endpoint.
-    Returns a continuous stream of JPEG frames from the simulation camera.
+    Get list of available cameras.
+
+    Returns:
+        List of camera IDs
+    """
+    camera_ids = [camera_id for camera_id, _ in controller.cameras]
+    return {"cameras": camera_ids}
+
+
+@app.get("/stream/{camera_id}")
+async def video_stream(camera_id: str):
+    """
+    MJPEG video stream endpoint for a specific camera.
+    Returns a continuous stream of JPEG frames from the specified camera.
+    Can be viewed directly in a browser: <img src="http://localhost:8000/stream/camera-id">
+    """
+    def generate():
+        while True:
+            # Get latest frame from controller for this camera
+            frame = controller.get_latest_frame(camera_id)
+
+            if frame is None:
+                # No frame available yet, skip
+                continue
+
+            # Encode frame as JPEG
+            _, buffer = cv2.imencode('.jpg', cv2.cvtColor(frame, cv2.COLOR_RGB2BGR),
+                                    [cv2.IMWRITE_JPEG_QUALITY, 80])
+
+            # Yield frame in MJPEG format
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+
+    return StreamingResponse(generate(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+
+@app.get("/stream")
+async def video_stream_default():
+    """
+    MJPEG video stream endpoint for the default (first) camera.
+    Returns a continuous stream of JPEG frames from the first camera.
     Can be viewed directly in a browser: <img src="http://localhost:8000/stream">
     """
     def generate():
         while True:
-            # Get latest frame from controller
+            # Get latest frame from controller (default camera)
             frame = controller.get_latest_frame()
 
             if frame is None:
@@ -96,7 +135,9 @@ async def root():
         "endpoints": {
             "POST /move": "Queue a move command (body: {x, y, z})",
             "GET /status": "Get current simulation status",
-            "GET /stream": "MJPEG video stream (1280x720 @ ~30 FPS)",
+            "GET /cameras": "Get list of available cameras",
+            "GET /stream": "MJPEG video stream from default camera (1280x720 @ ~30 FPS)",
+            "GET /stream/{camera_id}": "MJPEG video stream from specific camera",
         }
     }
 
@@ -121,12 +162,18 @@ def main():
 
     # Initialize scene on main thread (required for visualization)
     print("Initializing Genesis scene...")
-    scene, arm, dofs_idx, end_effector, stream_camera = setup_scene(show_viewer=args.vis)
+    setup_result = setup_scene(show_viewer=args.vis)
     print("Scene initialized successfully")
 
     # Create simulation controller (but don't start background thread)
     print("Creating simulation controller...")
-    controller = SimulationController(scene, arm, dofs_idx, end_effector, stream_camera)
+    controller = SimulationController(
+        scene=setup_result['scene'],
+        arm=setup_result['arm'],
+        dofs_idx=setup_result['dofs_idx'],
+        end_effector=setup_result['end_effector'],
+        cameras=setup_result['cameras']
+    )
     print("Simulation controller created")
 
     # Start FastAPI server in background thread

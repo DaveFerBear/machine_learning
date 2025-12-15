@@ -8,8 +8,24 @@ export default function Home() {
   const [z, setZ] = useState('0.3')
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [cameras, setCameras] = useState([])
 
   const API_URL = 'http://localhost:8000'
+
+  // Fetch camera list on mount
+  useEffect(() => {
+    const fetchCameras = async () => {
+      try {
+        const response = await fetch(`${API_URL}/cameras`)
+        const data = await response.json()
+        setCameras(data.cameras || [])
+      } catch (error) {
+        console.error('Failed to fetch cameras:', error)
+      }
+    }
+
+    fetchCameras()
+  }, [])
 
   // Fetch status periodically
   useEffect(() => {
@@ -59,11 +75,28 @@ export default function Home() {
       <h1>Periscope</h1>
 
       <div className="layout">
-        <div className="stream-container">
-          <img
-            src={`${API_URL}/stream`}
-            alt="Robot camera feed"
-          />
+        <div className="streams-section">
+          {cameras.length === 0 ? (
+            <div className="stream-container">
+              <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                Loading cameras...
+              </div>
+            </div>
+          ) : (
+            <div className="camera-grid">
+              {cameras.map((cameraId) => (
+                <div key={cameraId} className="camera-item">
+                  <div className="camera-label">{cameraId}</div>
+                  <div className="stream-container">
+                    <img
+                      src={`${API_URL}/stream/${cameraId}`}
+                      alt={`${cameraId} feed`}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="control-panel">

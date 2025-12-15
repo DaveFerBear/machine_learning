@@ -10,7 +10,13 @@ def setup_scene(show_viewer: bool = False):
         show_viewer: Whether to display the visualization window
 
     Returns:
-        tuple: (scene, arm, dofs_idx, end_effector, stream_camera)
+        dict: {
+            'scene': Scene object,
+            'arm': Robot arm entity,
+            'dofs_idx': List of DOF indices,
+            'end_effector': End effector link,
+            'cameras': List of (camera_id, camera) tuples
+        }
     """
     # Initialize Genesis
     gs.init(backend=gs.gpu, logging_level="warning")
@@ -81,15 +87,25 @@ def setup_scene(show_viewer: bool = False):
 
     # Add camera for streaming (positioned to view workspace)
     # Must be added BEFORE scene.build()
-    stream_camera = scene.add_camera(
-        res=(1280, 720),
-        pos=(0, -2.5, 1.5),
-        lookat=(0.5, 0.0, 0.5),
-        fov=50,
-        GUI=False,
-    )
+    cameras = {
+        'overview-camera': {
+            'res': (1280, 720),
+            'pos': (0, -2.5, 1.5),
+            'lookat': (0.5, 0.0, 0.5),
+            'fov': 50,
+        },
+    }
+    stream_cameras = []
+    for cam_name, cam_config in cameras.items():
+        c = scene.add_camera(
+            res=cam_config['res'],
+            pos=cam_config['pos'],
+            lookat=cam_config['lookat'],
+            fov=cam_config['fov'],
+            GUI=False,
+        )
+        stream_cameras.append((cam_name, c))
 
-    # Build scene
     scene.build()
 
     # Get end effector link
@@ -118,4 +134,10 @@ def setup_scene(show_viewer: bool = False):
     for _ in range(50):
         scene.step()
 
-    return scene, arm, dofs_idx, end_effector, stream_camera
+    return {
+        'scene': scene,
+        'arm': arm,
+        'dofs_idx': dofs_idx,
+        'end_effector': end_effector,
+        'cameras': stream_cameras,
+    }
