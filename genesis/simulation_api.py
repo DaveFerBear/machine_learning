@@ -83,10 +83,28 @@ class SimulationController:
             "current_task": self.current_task
         }
 
+    def run_on_main_thread(self):
+        """
+        Main simulation loop running on the main thread.
+        Continuously steps the simulation and processes queued commands.
+        Use this instead of start() when Genesis viewer needs to run on main thread.
+        """
+        while self.running:
+            # Always step the simulation for real-time execution
+            self.scene.step()
+
+            # If currently executing a path, continue executing waypoints
+            if self.is_executing and self.current_path is not None:
+                self._execute_waypoint()
+            # Otherwise, check if there are queued commands to process
+            elif not self.is_executing:
+                self._process_next_command()
+
     def _simulation_loop(self):
         """
         Main simulation loop running in background thread.
         Continuously steps the simulation and processes queued commands.
+        Note: This will fail if visualization is enabled due to threading restrictions.
         """
         while self.running:
             # Always step the simulation for real-time execution

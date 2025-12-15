@@ -1,4 +1,5 @@
 import argparse
+import threading
 import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -60,6 +61,11 @@ async def root():
     }
 
 
+def run_server(host: str, port: int):
+    """Run the FastAPI server in a background thread."""
+    uvicorn.run(app, host=host, port=port, log_level="info")
+
+
 def main():
     global controller
 
@@ -73,29 +79,38 @@ def main():
                         help="Port to bind the server to (default: 8000)")
     args = parser.parse_args()
 
-    # Initialize scene
+    # Initialize scene on main thread (required for visualization)
     print("Initializing Genesis scene...")
     scene, arm, dofs_idx, end_effector = setup_scene(show_viewer=args.vis)
     print("Scene initialized successfully")
 
-    # Create and start simulation controller
-    print("Starting simulation controller...")
+    # Create simulation controller (but don't start background thread)
+    print("Creating simulation controller...")
     controller = SimulationController(scene, arm, dofs_idx, end_effector)
-    controller.start()
-    print("Simulation controller started")
+    print("Simulation controller created")
 
-    # Start FastAPI server
-    print(f"\nStarting HTTP server on {args.host}:{args.port}")
+    # Start FastAPI server in background thread
+    print(f"\nStarting HTTP server on {args.host}:{args.port} (background thread)")
+    server_thread = threading.Thread(
+        target=run_server,
+        args=(args.host, args.port),
+        daemon=True
+    )
+    server_thread.start()
+
     print(f"Visualization: {'Enabled' if args.vis else 'Disabled'}")
     print("\nAPI Endpoints:")
     print(f"  POST http://{args.host}:{args.port}/move")
     print(f"  GET  http://{args.host}:{args.port}/status")
     print("\nExample curl command:")
     print(f"  curl -X POST http://{args.host}:{args.port}/move -H 'Content-Type: application/json' -d '{{\"x\": 0.4, \"y\": 0.2, \"z\": 0.3}}'")
-    print("\nPress Ctrl+C to stop the server\n")
+    print("\nPress Ctrl+C to stop the server")
+    print("\nStarting simulation loop on main thread...\n")
 
+    # Run simulation loop on main thread (required for visualization)
+    controller.running = True
     try:
-        uvicorn.run(app, host=args.host, port=args.port)
+        controller.run_on_main_thread()
     except KeyboardInterrupt:
         print("\nShutting down...")
         controller.stop()
