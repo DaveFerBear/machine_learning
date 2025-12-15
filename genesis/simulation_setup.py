@@ -10,7 +10,7 @@ def setup_scene(show_viewer: bool = False):
         show_viewer: Whether to display the visualization window
 
     Returns:
-        tuple: (scene, arm, dofs_idx, end_effector)
+        tuple: (scene, arm, dofs_idx, end_effector, stream_camera)
     """
     # Initialize Genesis
     gs.init(backend=gs.gpu, logging_level="warning")
@@ -79,6 +79,16 @@ def setup_scene(show_viewer: bool = False):
         ),
     )
 
+    # Add camera for streaming (positioned to view workspace)
+    # Must be added BEFORE scene.build()
+    stream_camera = scene.add_camera(
+        res=(1280, 720),
+        pos=(0, -2.5, 1.5),
+        lookat=(0.5, 0.0, 0.5),
+        fov=50,
+        GUI=False,
+    )
+
     # Build scene
     scene.build()
 
@@ -108,4 +118,4 @@ def setup_scene(show_viewer: bool = False):
     for _ in range(50):
         scene.step()
 
-    return scene, arm, dofs_idx, end_effector
+    return scene, arm, dofs_idx, end_effector, stream_camera

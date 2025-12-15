@@ -10,7 +10,7 @@ class SimulationController:
     Controller for Genesis simulation with real-time execution and command queuing.
     """
 
-    def __init__(self, scene, arm, dofs_idx, end_effector):
+    def __init__(self, scene, arm, dofs_idx, end_effector, camera=None):
         """
         Initialize the simulation controller.
 
@@ -19,11 +19,13 @@ class SimulationController:
             arm: Robot arm entity
             dofs_idx: List of DOF indices for the arm joints
             end_effector: End effector link object
+            camera: Optional camera for video streaming
         """
         self.scene = scene
         self.arm = arm
         self.dofs_idx = dofs_idx
         self.end_effector = end_effector
+        self.camera = camera
 
         # Command queue and synchronization
         self.command_queue = deque()
@@ -34,6 +36,12 @@ class SimulationController:
         self.is_executing = False
         self.current_path = None
         self.current_waypoint_idx = 0
+
+        # Frame caching for video streaming
+        self.latest_frame = None
+        self.frame_lock = threading.Lock()
+        self.render_interval = 3  # Render every 3 steps (~30 FPS at 100Hz sim)
+        self.step_count = 0
 
         # Thread control
         self.running = False
@@ -92,6 +100,11 @@ class SimulationController:
         while self.running:
             # Always step the simulation for real-time execution
             self.scene.step()
+            self.step_count += 1
+
+            # Render frame periodically for video streaming
+            if self.camera is not None and self.step_count % self.render_interval == 0:
+                self._render_frame()
 
             # If currently executing a path, continue executing waypoints
             if self.is_executing and self.current_path is not None:
@@ -204,3 +217,31 @@ class SimulationController:
             "is_executing": self.is_executing,
             "current_position": actual_pos.tolist() if actual_pos is not None else None
         }
+
+    def _render_frame(self):
+        """Render a frame from the camera and cache it."""
+        if self.camera is None:
+            return
+
+        render_result = self.camera.render()
+        rgb = render_result[0] if isinstance(render_result, tuple) else render_result
+
+        # Convert to numpy if needed
+        if isinstance(rgb, torch.Tensor):
+            rgb = rgb.detach().cpu().numpy()
+
+        # Cache the frame (thread-safe)
+        with self.frame_lock:
+            self.latest_frame = rgb
+
+    def get_latest_frame(self):
+        """
+        Get the most recently rendered frame.
+
+        Returns:
+            numpy.ndarray: RGB frame (height, width, 3) or None if no frame available
+        """
+        with self.frame_lock:
+            if self.latest_frame is not None:
+                return self.latest_frame.copy()
+            return None
