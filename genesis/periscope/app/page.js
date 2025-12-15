@@ -9,6 +9,7 @@ export default function Home() {
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(false)
   const [cameras, setCameras] = useState([])
+  const [command, setCommand] = useState('')
 
   const API_URL = 'http://localhost:8000'
 
@@ -43,6 +44,13 @@ export default function Home() {
     const interval = setInterval(fetchStatus, 1000)
     return () => clearInterval(interval)
   }, [])
+
+  const handleCommand = async (e) => {
+    e.preventDefault()
+    console.log('Command submitted:', command)
+    // TODO: Send command to backend for processing
+    setCommand('')
+  }
 
   const handleMove = async (e) => {
     e.preventDefault()
@@ -103,42 +111,64 @@ export default function Home() {
           <h2>Control Panel</h2>
 
           <form onSubmit={handleMove}>
-            <div className="input-group">
-              <label htmlFor="x">X Position</label>
-              <input
-                id="x"
-                type="number"
-                step="0.01"
-                value={x}
-                onChange={(e) => setX(e.target.value)}
-              />
-            </div>
+            <label className="section-label">Position</label>
+            <div className="input-row">
+              <div className="input-group-inline">
+                <label htmlFor="x">X</label>
+                <input
+                  id="x"
+                  type="number"
+                  step="0.05"
+                  value={x}
+                  onChange={(e) => setX(e.target.value)}
+                />
+              </div>
 
-            <div className="input-group">
-              <label htmlFor="y">Y Position</label>
-              <input
-                id="y"
-                type="number"
-                step="0.01"
-                value={y}
-                onChange={(e) => setY(e.target.value)}
-              />
-            </div>
+              <div className="input-group-inline">
+                <label htmlFor="y">Y</label>
+                <input
+                  id="y"
+                  type="number"
+                  step="0.05"
+                  value={y}
+                  onChange={(e) => setY(e.target.value)}
+                />
+              </div>
 
-            <div className="input-group">
-              <label htmlFor="z">Z Position</label>
-              <input
-                id="z"
-                type="number"
-                step="0.01"
-                value={z}
-                onChange={(e) => setZ(e.target.value)}
-              />
+              <div className="input-group-inline">
+                <label htmlFor="z">Z</label>
+                <input
+                  id="z"
+                  type="number"
+                  step="0.05"
+                  value={z}
+                  onChange={(e) => setZ(e.target.value)}
+                />
+              </div>
             </div>
 
             <button type="submit" className="btn" disabled={loading}>
-              {loading ? 'Queueing...' : 'Move to Position'}
+              {loading ? 'Queueing...' : 'Move'}
             </button>
+          </form>
+
+          <div className="divider"></div>
+
+          <form onSubmit={handleCommand} className="command-form">
+            <label className="section-label" htmlFor="command">Command</label>
+            <div className="command-input-wrapper">
+              <input
+                id="command"
+                type="text"
+                placeholder="pick up the white box"
+                value={command}
+                onChange={(e) => setCommand(e.target.value)}
+                className="command-input"
+              />
+              <button type="submit" className="btn btn-primary" disabled={!command.trim()}>
+                Send
+              </button>
+            </div>
           </form>
 
           {status && (
