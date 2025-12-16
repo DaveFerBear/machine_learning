@@ -61,6 +61,8 @@ def setup_scene(show_viewer: bool = False):
         surface=gs.surfaces.Default(color=(0.05, 0.05, 0.05, 1.0)),
     )
 
+
+
     # Add 6-DOF arm
     arm = scene.add_entity(
         gs.morphs.MJCF(
@@ -95,7 +97,16 @@ def setup_scene(show_viewer: bool = False):
         surface=gs.surfaces.Default(color=(1.0, 0.0, 0.0, 1.0)),  # red
     )
 
-
+    parts_bin = scene.add_entity(
+         morph=gs.morphs.Mesh(
+            file="./parts/Small_stackable_parts_bin.stl",
+            scale=0.0015,
+            pos=(0.5, 0.5, 0),
+            euler=(0, 0, 0),
+            fixed=True,
+        ),
+        surface=gs.surfaces.Default(color=(0.5, 0.5, 0.8, 1.0)),
+    )
 
     # Add cameras for streaming (positioned to view workspace)
     # Must be added BEFORE scene.build()
@@ -159,7 +170,8 @@ def setup_scene(show_viewer: bool = False):
     )
 
     # Set initial joint position
-    initial_joints = np.array([1.4604863, 0.7191452, -0.12146536, -0.41686273, 0.15724644, -0.98767394])
+    # Note: ELBOW_A (index 3) must be in range 0-180° (0 to π rad)
+    initial_joints = np.array([1.4604863, 0.7191452, -0.12146536, 0.5, 0.15724644, -0.98767394])
     arm.set_dofs_position(initial_joints, dofs_idx)
 
     # Let it settle
