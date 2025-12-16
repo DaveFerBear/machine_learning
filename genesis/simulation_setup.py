@@ -77,13 +77,25 @@ def setup_scene(show_viewer: bool = False):
     ]
     dofs_idx = [arm.get_joint(name).dof_idx_local for name in jnt_names]
 
-    # Add cube
+    # Blue cube
     cube = scene.add_entity(
         gs.morphs.Box(
             size=(0.04, 0.04, 0.04),
-            pos=(0.6, 0.0, 0.02),
+            pos=(0.3, 0.0, 0.02),
         ),
+        surface=gs.surfaces.Default(color=(0.0, 0.0, 1.0, 1.0)),  # blue
     )
+
+    # Red sphere below
+    sphere = scene.add_entity(
+        gs.morphs.Sphere(
+            radius=0.02,
+            pos=(0.4, 0.1, 0.0),
+        ),
+        surface=gs.surfaces.Default(color=(1.0, 0.0, 0.0, 1.0)),  # red
+    )
+
+
 
     # Add cameras for streaming (positioned to view workspace)
     # Must be added BEFORE scene.build()
