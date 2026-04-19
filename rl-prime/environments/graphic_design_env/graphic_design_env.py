@@ -58,6 +58,34 @@ def _parse_score(text: str) -> float:
     return float(m.group(1)) / 100.0 if m else 0.0
 
 
+def _strip_nulls(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {k: _strip_nulls(v) for k, v in obj.items() if v is not None}
+    if isinstance(obj, list):
+        return [_strip_nulls(x) for x in obj]
+    return obj
+
+
+class _MultimodalSingleTurnEnv(vf.SingleTurnEnv):
+    """SingleTurnEnv that strips null fields from multimodal prompts.
+
+    Why: HF Datasets unifies the struct schema across mixed content-part types,
+    so image parts gain a `text: None` key and vice versa. OpenAI rejects those
+    as unexpected. Clean them up before the prompt leaves the env.
+    """
+
+    async def setup_state(self, state):
+        prompt = state.get("prompt")
+        if isinstance(prompt, list):
+            cleaned = []
+            for msg in prompt:
+                if hasattr(msg, "model_dump"):
+                    msg = msg.model_dump(exclude_none=True)
+                cleaned.append(_strip_nulls(msg))
+            state["prompt"] = cleaned
+        return state
+
+
 def _build_dataset(csv_path: Path, max_examples: int | None) -> Dataset:
     rows: list[dict] = []
     with csv_path.open() as f:
@@ -116,10 +144,14 @@ def load_environment(
     ))
 
     async def edit_faithfulness(completion, answer, info, **_) -> float:
-        refined_prompt = (
-            completion[-1]["content"]
-            if isinstance(completion, list) else str(completion)
-        )
+        if isinstance(completion, list):
+            if not completion:
+                return 0.0
+            refined_prompt = completion[-1].get("content") or ""
+        else:
+            refined_prompt = str(completion or "")
+        if not refined_prompt.strip():
+            return 0.0
         orig_path = Path(info["image_path"])
 
         with orig_path.open("rb") as img_file:
@@ -151,4 +183,4 @@ def load_environment(
         return _parse_score("".join(text_blocks))
 
     rubric = vf.Rubric(funcs=[edit_faithfulness])
-    return vf.SingleTurnEnv(dataset=dataset, rubric=rubric)
+    return _MultimodalSingleTurnEnv(dataset=dataset, rubric=rubric)
