@@ -1,0 +1,9 @@
+2026-04-19 14:41:46 - verifiers.utils.env_utils - INFO - Loading environment: graphic-design-env
+2026-04-19 14:41:46 - verifiers.utils.env_utils - INFO - Using default args: judge_base_url='https://api.anthropic.com', edits_csv=None, editor_model='gpt-image-1', judge_api_key_var='ANTHROPIC_API_KEY', editor_base_url='https://api.openai.com/v1', judge_model='claude-sonnet-4-6', editor_api_key_var='OPENAI_API_KEY', judge_sampling_args=None, max_examples=-1, editor_size='1024x1024', judge_max_tokens=1024
+2026-04-19 14:41:47 - verifiers.utils.env_utils - INFO - Successfully loaded environment 'graphic-design-env'
+2026-04-19 14:41:47 - verifiers.utils.thread_utils - INFO - Scaled default executor and 0 registered executor(s) ()
+2026-04-19 14:41:47 - verifiers.serve.server.env_worker.EnvWorker - INFO - Initialized worker graphic-design-env-0 on ipc:///tmp/vf-71c02c892df2-graphic-design-env-0
+2026-04-19 14:41:47 - verifiers.serve.server.env_worker.EnvWorker - INFO - Starting worker graphic-design-env-0
+2026-04-19 14:41:47 - verifiers.utils.message_utils - WARNING - prompt_messages returned raw dicts/strings instead of vf.Messages. This repeatedly triggers normalize_messages(), causing unnecessary Pydantic validation overhead. Return vf.Message types (e.g. vf.UserMessage, vf.AssistantMessage) to avoid this.
+2026-04-19 14:42:44 - verifiers.utils.process_utils - INFO - Death pipe closed — parent is gone, sending SIGTERM to self
+2026-04-19 14:42:44 - verifiers.serve.server.env_worker.EnvWorker - INFO - Shut down worker graphic-design-env-0

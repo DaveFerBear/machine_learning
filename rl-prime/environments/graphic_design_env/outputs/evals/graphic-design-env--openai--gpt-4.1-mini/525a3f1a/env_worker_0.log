@@ -1,0 +1,47 @@
+2026-04-19 14:25:16 - verifiers.utils.env_utils - INFO - Loading environment: graphic-design-env
+2026-04-19 14:25:16 - verifiers.utils.env_utils - INFO - Using default args: judge_api_key_var='ANTHROPIC_API_KEY', max_examples=-1, judge_sampling_args=None, judge_base_url='https://api.anthropic.com', editor_base_url='https://api.openai.com/v1', edits_csv=None, judge_model='claude-sonnet-4-6', editor_api_key_var='OPENAI_API_KEY', editor_model='gpt-image-1', judge_max_tokens=1024, editor_size='1024x1024'
+2026-04-19 14:25:17 - verifiers.utils.env_utils - INFO - Successfully loaded environment 'graphic-design-env'
+2026-04-19 14:25:17 - verifiers.utils.thread_utils - INFO - Scaled default executor and 0 registered executor(s) ()
+2026-04-19 14:25:17 - verifiers.serve.server.env_worker.EnvWorker - INFO - Initialized worker graphic-design-env-0 on ipc:///tmp/vf-0875c74d95ca-graphic-design-env-0
+2026-04-19 14:25:17 - verifiers.serve.server.env_worker.EnvWorker - INFO - Starting worker graphic-design-env-0
+2026-04-19 14:25:17 - verifiers.serve.server.env_worker.EnvWorker - ERROR - Error processing request d0b69e2dc49444a080d021a5c5e56b13: Error code: 401 - {'detail': 'Invalid or expired token, or user not part of team', 'request_id': '9eeefb1f2ac5dac8-SJC', 'inference_id': 'req_3ee70510e5d14d5facc7de0e5872259a'}
+Traceback (most recent call last):
+  File "/Users/davidferris/Documents/Personal/Software/machine_learning/rl-prime/.venv/lib/python3.11/site-packages/verifiers/serve/server/env_worker.py", line 202, in process_request
+    response = await self.handle_run_group(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidferris/Documents/Personal/Software/machine_learning/rl-prime/.venv/lib/python3.11/site-packages/verifiers/serve/server/env_worker.py", line 154, in handle_run_group
+    outputs = await self.env.run_group(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidferris/Documents/Personal/Software/machine_learning/rl-prime/.venv/lib/python3.11/site-packages/verifiers/envs/environment.py", line 793, in run_group
+    group_states = await maybe_retry(run_group_attempt, max_retries=max_retries)()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidferris/Documents/Personal/Software/machine_learning/rl-prime/.venv/lib/python3.11/site-packages/verifiers/envs/environment.py", line 781, in run_group_attempt
+    group_states = await asyncio.gather(*rollout_tasks)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidferris/Documents/Personal/Software/machine_learning/rl-prime/.venv/lib/python3.11/site-packages/verifiers/envs/multiturn_env.py", line 168, in rollout
+    response = await self.get_model_response(state, prompt_messages)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidferris/Documents/Personal/Software/machine_learning/rl-prime/.venv/lib/python3.11/site-packages/verifiers/envs/environment.py", line 546, in get_model_response
+    response = await client.get_response(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidferris/Documents/Personal/Software/machine_learning/rl-prime/.venv/lib/python3.11/site-packages/verifiers/clients/client.py", line 129, in get_response
+    native_response = await self.get_native_response(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidferris/Documents/Personal/Software/machine_learning/rl-prime/.venv/lib/python3.11/site-packages/verifiers/clients/openai_chat_completions_client.py", line 71, in wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidferris/Documents/Personal/Software/machine_learning/rl-prime/.venv/lib/python3.11/site-packages/verifiers/clients/openai_chat_completions_client.py", line 288, in get_native_response
+    response = await self.client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidferris/Documents/Personal/Software/machine_learning/rl-prime/.venv/lib/python3.11/site-packages/openai/resources/chat/completions/completions.py", line 2714, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/davidferris/Documents/Personal/Software/machine_learning/rl-prime/.venv/lib/python3.11/site-packages/openai/_base_client.py", line 1913, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidferris/Documents/Personal/Software/machine_learning/rl-prime/.venv/lib/python3.11/site-packages/openai/_base_client.py", line 1698, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.AuthenticationError: Error code: 401 - {'detail': 'Invalid or expired token, or user not part of team', 'request_id': '9eeefb1f2ac5dac8-SJC', 'inference_id': 'req_3ee70510e5d14d5facc7de0e5872259a'}
+2026-04-19 14:25:17 - verifiers.utils.process_utils - INFO - Death pipe closed — parent is gone, sending SIGTERM to self
+2026-04-19 14:25:17 - verifiers.serve.server.env_worker.EnvWorker - INFO - Cancelling 4 active tasks on worker graphic-design-env-0
+2026-04-19 14:25:17 - verifiers.serve.server.env_worker.EnvWorker - INFO - Shut down worker graphic-design-env-0

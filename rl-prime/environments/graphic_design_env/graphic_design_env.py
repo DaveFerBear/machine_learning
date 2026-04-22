@@ -1,6 +1,8 @@
 import base64
 import csv
+import json
 import re
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +17,7 @@ from prompts import EDIT_CRITIC_PROMPT, POLICY_INSTRUCTIONS
 DATA_DIR = Path(__file__).parent / "data"
 ORIGINALS_DIR = DATA_DIR / "original"
 EDITS_CSV = Path(__file__).parent / "edits.csv"
+EDITS_OUTPUT_DIR = Path(__file__).parent / "outputs" / "edits"
 
 
 def _media_type(path: Path) -> str:
@@ -133,6 +136,7 @@ def load_environment(
     csv_path = Path(edits_csv) if edits_csv else EDITS_CSV
     limit = None if max_examples < 0 else max_examples
     dataset = _build_dataset(csv_path, max_examples=limit)
+    EDITS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     judge_client = setup_anthropic_client(ClientConfig(
         api_base_url=judge_base_url,
@@ -162,6 +166,11 @@ def load_environment(
                 size=editor_size,
             )
         edited_b64 = edit_resp.data[0].b64_json
+        uid = uuid.uuid4().hex[:8]
+        stem = f"{info['template_id']}__{uid}"
+        (EDITS_OUTPUT_DIR / f"{stem}.png").write_bytes(
+            base64.b64decode(edited_b64)
+        )
 
         sampling = {"max_tokens": judge_max_tokens, **(judge_sampling_args or {})}
         judge_resp = await judge_client.messages.create(
@@ -179,8 +188,19 @@ def load_environment(
             }],
             **sampling,
         )
-        text_blocks = [b.text for b in judge_resp.content if b.type == "text"]
-        return _parse_score("".join(text_blocks))
+        judge_text = "".join(b.text for b in judge_resp.content if b.type == "text")
+        score = _parse_score(judge_text)
+        (EDITS_OUTPUT_DIR / f"{stem}.json").write_text(json.dumps({
+            "template_id": info["template_id"],
+            "edit_type": info["edit_type"],
+            "categories": info["categories"],
+            "original_image": info["image_path"],
+            "instruction": answer,
+            "refined_prompt": refined_prompt,
+            "score": score,
+            "judge_response": judge_text,
+        }, indent=2))
+        return score
 
     rubric = vf.Rubric(funcs=[edit_faithfulness])
     return _MultimodalSingleTurnEnv(dataset=dataset, rubric=rubric)
