@@ -61,36 +61,38 @@ class JazzAgent(object):
         )
         self.messages.append({'role': 'assistant', 'content': res.content})
         if res.stop_reason == 'tool_use':
+            tool_results = []
             for m in res.content:
                 if m.type == 'tool_use':
                     if m.name == 'search_corpus':
                         search_res = self.search_corpus(m.input['query'])
-                        self.messages.append({'role': 'user', 'content': [{
+                        tool_results.append({
                             'type': 'tool_result',
                             'tool_use_id': m.id,
                             'content': '\n'.join(search_res),
-                        }]})
-                        # recurse
-                        return self.prompt(None, is_first_call=False)
+                        })
                     else:
                         raise Exception("Invalid tool ", m.name)
+            self.messages.append({'role': 'user', 'content': tool_results})
+            return self.prompt(None, is_first_call=False)
         return '\n'.join(b.text for b in res.content if b.type == 'text')
 
 
 
 def test():
-    a = JazzAgent()
-    res = a.search_corpus("Marcus Vega")
+    a1 = JazzAgent()
+    res = a1.search_corpus("Marcus Vega")
     assert all(["Marcus Vega" in r for r in res])
 
-    res = a.prompt("What instrument did Marcus Vega play?")
+    res = a1.prompt("What instrument did Marcus Vega play?")
     print(res)
-    a.reset()
+    a1.reset()
 
-    res = a.prompt("Which musicians played piano?")
-    print(res)
+    a2 = JazzAgent()
+    res2 = a2.prompt("Which musicians played piano? Return the musician as a list, and what search queries you tried.")
+    print(res2)
 
-    a.print_conversation()
+    a2.print_conversation()
     
 
 if __name__ == '__main__':
